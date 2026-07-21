@@ -1,7 +1,13 @@
 import { Router } from "express";
 
+// import {
+//   forgotPasswordLimiter,
+//   resetPasswordLimiter,
+//   verifyResetOtpLimiter,
+// } from "../../common/middleware/auth-rate-limit.middleware.js";
 import {
   forgotPasswordLimiter,
+<<<<<<< HEAD
 <<<<<<< HEAD
   loginLimiter,
   registerLimiter,
@@ -10,6 +16,10 @@ import {
 } from "../../common/middleware/auth-rate-limit.middleware.js";
 import { authenticate } from "../../common/middleware/authenticate.middleware.js";
 =======
+=======
+  loginLimiter,
+  registerLimiter,
+>>>>>>> 2d5ae08 (fix(auth): rate limit registration and login attempts)
   resetPasswordLimiter,
   verifyResetOtpLimiter,
 } from "../../common/middleware/auth-rate-limit.middleware.js";
@@ -59,12 +69,23 @@ import { authenticate } from "../../common/middleware/authenticate.middleware.js
 >>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 export const authRouter = Router();
 
+// authRouter.post(
+//   "/register",
+//   uploadProfileImageMiddleware.single("profileImage"),
+//   validateProfileImage,
+//   validateBody(registerSchema),
+//   register,
+// );
 authRouter.post(
   "/register",
+<<<<<<< HEAD
 <<<<<<< HEAD
   registerLimiter,
 =======
 >>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
+=======
+  registerLimiter,
+>>>>>>> 2d5ae08 (fix(auth): rate limit registration and login attempts)
   uploadProfileImageMiddleware.single("profileImage"),
   validateProfileImage,
   validateBody(registerSchema),
@@ -72,10 +93,15 @@ authRouter.post(
 );
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 authRouter.post("/login", loginLimiter, validateBody(loginSchema), login);
 =======
 authRouter.post("/login", validateBody(loginSchema), login);
 >>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
+=======
+// authRouter.post("/login", validateBody(loginSchema), login);
+authRouter.post("/login", loginLimiter, validateBody(loginSchema), login);
+>>>>>>> 2d5ae08 (fix(auth): rate limit registration and login attempts)
 
 authRouter.get("/me", authenticate, getMe);
 
