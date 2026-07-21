@@ -51,9 +51,27 @@ export const uploadProfileImage = async (
   });
 };
 
+
 export const deleteProfileImage = async (publicId: string): Promise<void> => {
-  await cloudinary.uploader.destroy(publicId, {
-    resource_type: "image",
-    invalidate: true,
-  });
+  try {
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "image",
+      invalidate: true,
+    });
+
+    /*
+     * Cloudinary ka "not found" result idempotent success hai:
+     * image pehle delete ho chuki ho to dobara failure nahi dena.
+     */
+    if (result.result !== "ok" && result.result !== "not found") {
+      throw new Error(
+        `Unexpected Cloudinary deletion result: ${result.result}`,
+      );
+    }
+  } catch (error) {
+    throw new AppError("Profile image could not be deleted", 502, {
+      code: "PROFILE_IMAGE_DELETE_FAILED",
+      cause: error,
+    });
+  }
 };
