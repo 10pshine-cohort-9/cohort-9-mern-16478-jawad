@@ -45,9 +45,5 @@ tmp/
 temp/
 *.tmp
 
-# Runtime uploads
-uploads/
-backend/uploads/
-
 # Prisma generated client
 backend/src/generated/prisma/

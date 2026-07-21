@@ -15,21 +15,19 @@ enum Gender {
 }
 
 model User {
-  id                   String   @id @default(uuid()) @db.Uuid
-  fullName             String   @map("full_name") @db.VarChar(120)
-  username             String   @unique @db.VarChar(30)
-  email                String   @unique @db.VarChar(255)
-  phoneNumber          String   @unique @map("phone_number") @db.VarChar(20)
-  city                 String   @db.VarChar(100)
-  gender               Gender
-  profileImageUrl      String   @map("profile_image_url") @db.VarChar(500)
-  profileImagePublicId String   @map("profile_image_public_id") @db.VarChar(255)
-  passwordHash         String   @map("password_hash") @db.VarChar(255)
-  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id              String   @id @default(uuid()) @db.Uuid
+  fullName        String   @map("full_name") @db.VarChar(120)
+  username        String   @unique @db.VarChar(30)
+  email           String   @unique @db.VarChar(255)
+  phoneNumber     String   @unique @map("phone_number") @db.VarChar(20)
+  city            String   @db.VarChar(100)
+  gender          Gender
+  profileImageUrl String?  @map("profile_image_url") @db.VarChar(500)
+  passwordHash    String   @map("password_hash") @db.VarChar(255)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  notes         Note[]
-  passwordReset PasswordReset?
+  notes Note[]
 
   @@index([createdAt])
   @@map("users")
@@ -48,6 +46,7 @@ model Note {
   @@index([userId, updatedAt])
   @@map("notes")
 }
+<<<<<<< HEAD
 
 model PasswordReset {
   id                  String    @id @default(uuid()) @db.Uuid
@@ -66,3 +65,5 @@ model PasswordReset {
   @@index([expiresAt])
   @@map("password_resets")
 }
+=======
+>>>>>>> 7f9783d (feat(backend): configure PostgreSQL and Prisma data layer)

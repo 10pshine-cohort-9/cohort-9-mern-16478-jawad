@@ -10,11 +10,11 @@ interface DatabaseInformation {
 const checkDatabaseConnection = async (): Promise<void> => {
   try {
     const result = await prisma.$queryRaw<DatabaseInformation[]>`
-          SELECT
-            current_database() AS database_name,
-            current_user AS database_user,
-            version() AS database_version
-        `;
+      SELECT
+        current_database() AS database_name,
+        current_user AS database_user,
+        version() AS database_version
+    `;
 
     const databaseInformation = result[0];
 
@@ -40,20 +40,7 @@ const checkDatabaseConnection = async (): Promise<void> => {
 
     process.exitCode = 1;
   } finally {
-    try {
-      await prisma.$disconnect();
-
-      logger.info("PostgreSQL connection closed successfully");
-    } catch (disconnectError) {
-      logger.error(
-        {
-          err: disconnectError,
-        },
-        "PostgreSQL cleanup failed",
-      );
-
-      process.exitCode = 1;
-    }
+    await prisma.$disconnect();
   }
 };
 

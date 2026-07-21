@@ -1,3 +1,4 @@
+
 import { app } from "./app.js";
 import { env } from "./config/env.js";
 import { logger } from "./lib/logger.js";
@@ -49,25 +50,18 @@ const shutdown = (signal: string): void => {
   );
 
   server.close(async (error) => {
-    let exitCode = 0;
-
     if (error) {
-      logger.error(
-        {
-          error,
-        },
-        "HTTP server shutdown failed",
-      );
-
-      exitCode = 1;
-    } else {
-      logger.info("HTTP server closed successfully");
+      logger.error({ err: error }, "HTTP server shutdown failed");
+      process.exit(1);
     }
 
     try {
       await prisma.$disconnect();
 
       logger.info("Database connection closed successfully");
+      logger.info("Server shutdown completed successfully");
+
+      process.exit(0);
     } catch (disconnectError) {
       logger.error(
         {
@@ -76,25 +70,8 @@ const shutdown = (signal: string): void => {
         "Database disconnection failed",
       );
 
-      exitCode = 1;
+      process.exit(1);
     }
-
-    if (exitCode === 0) {
-      logger.info("Server shutdown completed successfully");
-    } else {
-      logger.error(
-        {
-          exitCode,
-        },
-        "Server shutdown completed with errors",
-      );
-    }
-
-    /*
-     * Natural process termination allows the Pino
-     * transport to complete pending shutdown logs.
-     */
-    process.exitCode = exitCode;
   });
 };
 
@@ -105,3 +82,4 @@ process.on("SIGINT", () => {
 process.on("SIGTERM", () => {
   shutdown("SIGTERM");
 });
+
