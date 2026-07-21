@@ -20,7 +20,6 @@ const closeHttpServer = async (): Promise<void> => {
         reject(error);
         return;
       }
-
       resolve();
     });
   });
@@ -47,11 +46,6 @@ const startServer = async (): Promise<void> => {
 
     server = app.listen(env.PORT);
 
-    /*
-     * Wait until the server has successfully bound
-     * to the configured port. The promise rejects
-     * automatically if the server emits an error.
-     */
     await once(server, "listening");
 
     logger.info(
@@ -87,40 +81,6 @@ const startServer = async (): Promise<void> => {
   }
 };
 
-// const shutdown = async (signal: string): Promise<void> => {
-//   if (isShuttingDown) {
-//     return;
-//   }
-
-//   isShuttingDown = true;
-
-//   logger.info(
-//     {
-//       signal,
-//     },
-//     "Application shutdown started",
-//   );
-
-//   try {
-//     await closeHttpServer();
-//     await prisma.$disconnect();
-
-//     logger.info("Application shutdown completed");
-
-//     process.exitCode = 0;
-//   } catch (error) {
-//     logger.error(
-//       {
-//         err: error,
-//       },
-//       "Application shutdown failed",
-//     );
-
-//     process.exitCode = 1;
-//   }
-// };
-
-// ✅ shutdown FUNCTION MEIN CHANGE KARO
 const shutdown = async (signal: string): Promise<void> => {
   if (isShuttingDown) {
     return;
@@ -137,7 +97,6 @@ const shutdown = async (signal: string): Promise<void> => {
 
   let exitCode = 0;
 
-  // ✅ HTTP server close - ALWAYS try
   try {
     await closeHttpServer();
   } catch (error) {
@@ -150,7 +109,6 @@ const shutdown = async (signal: string): Promise<void> => {
     exitCode = 1;
   }
 
-  // ✅ Database disconnect - ALWAYS try (even if HTTP close failed)
   try {
     await prisma.$disconnect();
     logger.info("PostgreSQL disconnected successfully");
