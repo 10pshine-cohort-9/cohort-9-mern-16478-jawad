@@ -7,6 +7,21 @@ const booleanStringSchema = z
   .default("false")
   .transform((value) => value === "true");
 
+const postgresUrlSchema = z
+  .string()
+  .url("DATABASE_URL must be a valid URL")
+  .refine(
+    (value) => {
+      const protocol = new URL(value).protocol;
+
+      return protocol === "postgresql:" || protocol === "postgres:";
+    },
+    {
+      message:
+        "DATABASE_URL must use the postgresql:// or postgres:// protocol",
+    },
+  );
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
