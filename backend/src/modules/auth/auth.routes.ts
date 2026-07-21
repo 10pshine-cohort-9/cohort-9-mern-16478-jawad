@@ -2,26 +2,27 @@ import { Router } from "express";
 
 import {
   forgotPasswordLimiter,
-  loginLimiter,
-  registerLimiter,
   resetPasswordLimiter,
   verifyResetOtpLimiter,
 } from "../../common/middleware/auth-rate-limit.middleware.js";
-import { authenticate } from "../../common/middleware/authenticate.middleware.js";
+
 import {
   uploadProfileImageMiddleware,
   validateProfileImage,
 } from "../../common/middleware/upload-profile-image.middleware.js";
+
 import { validateBody } from "../../common/middleware/validate.middleware.js";
+
 import {
   forgotPassword,
   getMe,
   login,
-  logout,
   register,
+  logout,
   resetPassword,
   verifyResetOtp,
 } from "./auth.controller.js";
+
 import {
   forgotPasswordSchema,
   loginSchema,
@@ -30,18 +31,19 @@ import {
   verifyResetOtpSchema,
 } from "./auth.schema.js";
 
+import { authenticate } from "../../common/middleware/authenticate.middleware.js";
+
 export const authRouter = Router();
 
 authRouter.post(
   "/register",
-  registerLimiter,
   uploadProfileImageMiddleware.single("profileImage"),
   validateProfileImage,
   validateBody(registerSchema),
   register,
 );
 
-authRouter.post("/login", loginLimiter, validateBody(loginSchema), login);
+authRouter.post("/login", validateBody(loginSchema), login);
 
 authRouter.get("/me", authenticate, getMe);
 

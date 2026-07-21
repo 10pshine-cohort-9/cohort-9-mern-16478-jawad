@@ -27,12 +27,7 @@ export const uploadProfileImage = async (
       },
       (error, result) => {
         if (error) {
-          reject(
-            new AppError("Failed to upload profile image", 500, {
-              code: "CLOUDINARY_UPLOAD_FAILED",
-              cause: error,
-            }),
-          );
+          reject(error);
           return;
         }
 
@@ -57,33 +52,8 @@ export const uploadProfileImage = async (
 };
 
 export const deleteProfileImage = async (publicId: string): Promise<void> => {
-  try {
-    const result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: "image",
-      invalidate: true,
-    });
-
-    if (result.result !== "ok" && result.result !== "not found") {
-      throw new AppError(
-        `Unexpected Cloudinary deletion result: ${result.result}`,
-        502,
-        {
-          code: "PROFILE_IMAGE_DELETE_FAILED",
-          details: {
-            publicId,
-            result: result.result,
-          },
-        },
-      );
-    }
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
-
-    throw new AppError("Profile image could not be deleted", 502, {
-      code: "PROFILE_IMAGE_DELETE_FAILED",
-      cause: error,
-    });
-  }
+  await cloudinary.uploader.destroy(publicId, {
+    resource_type: "image",
+    invalidate: true,
+  });
 };

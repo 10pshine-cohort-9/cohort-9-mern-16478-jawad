@@ -3,9 +3,7 @@ import { z, type ZodType } from "zod";
 
 import { AppError } from "../errors/app-error.js";
 
-export const validateBody = <T extends ZodType>(
-  schema: T
-): RequestHandler => {
+export const validateBody = (schema: ZodType): RequestHandler => {
   return (request, _response, next) => {
     const result = schema.safeParse(request.body);
 
@@ -19,7 +17,7 @@ export const validateBody = <T extends ZodType>(
       return;
     }
 
-    request.body = result.data as z.infer<T>;
+    request.body = result.data;
     next();
   };
 };

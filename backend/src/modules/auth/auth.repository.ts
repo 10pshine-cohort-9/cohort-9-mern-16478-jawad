@@ -138,10 +138,6 @@ export const authRepository = {
           increment: 1,
         },
       },
-
-      select: {
-        attempts: true,
-      },
     });
   },
 

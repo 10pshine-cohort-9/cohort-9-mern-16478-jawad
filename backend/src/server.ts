@@ -1,4 +1,3 @@
-import { once } from "node:events";
 import type { Server } from "node:http";
 
 import { app } from "./app.js";
@@ -7,36 +6,6 @@ import { logger } from "./lib/logger.js";
 import { prisma } from "./lib/prisma.js";
 
 let server: Server | undefined;
-let isShuttingDown = false;
-
-const closeHttpServer = async (): Promise<void> => {
-  if (!server || !server.listening) {
-    return;
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    server?.close((error) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve();
-    });
-  });
-};
-
-const disconnectDatabase = async (): Promise<void> => {
-  try {
-    await prisma.$disconnect();
-  } catch (error) {
-    logger.error(
-      {
-        err: error,
-      },
-      "Failed to disconnect from PostgreSQL",
-    );
-  }
-};
 
 const startServer = async (): Promise<void> => {
   try {
@@ -44,92 +13,49 @@ const startServer = async (): Promise<void> => {
 
     logger.info("PostgreSQL connection established");
 
-    server = app.listen(env.PORT);
-
-    await once(server, "listening");
-
-    logger.info(
-      {
-        port: env.PORT,
-        environment: env.NODE_ENV,
-      },
-      "Notes App API server started",
-    );
-  } catch (error) {
-    logger.fatal(
-      {
-        err: error,
-        port: env.PORT,
-      },
-      "Application startup failed",
-    );
-
-    try {
-      await closeHttpServer();
-    } catch (closeError) {
-      logger.error(
+    server = app.listen(env.PORT, () => {
+      logger.info(
         {
-          err: closeError,
+          port: env.PORT,
+          environment: env.NODE_ENV,
         },
-        "Failed to close HTTP server after startup error",
+        "Notes App API server started",
       );
-    }
+    });
+  } catch (error) {
+    logger.fatal({ err: error }, "Application startup failed");
 
-    await disconnectDatabase();
-
-    process.exitCode = 1;
+    await prisma.$disconnect().catch(() => undefined);
+    process.exit(1);
   }
 };
 
 const shutdown = async (signal: string): Promise<void> => {
-  if (isShuttingDown) {
-    return;
-  }
-
-  isShuttingDown = true;
-
-  logger.info(
-    {
-      signal,
-    },
-    "Application shutdown started",
-  );
-
-  let exitCode = 0;
+  logger.info({ signal }, "Application shutdown started");
 
   try {
-    await closeHttpServer();
-  } catch (error) {
-    logger.error(
-      {
-        err: error,
-      },
-      "HTTP server close failed",
-    );
-    exitCode = 1;
-  }
+    if (server) {
+      await new Promise<void>((resolve, reject) => {
+        server?.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
 
-  try {
+          resolve();
+        });
+      });
+    }
+
     await prisma.$disconnect();
-    logger.info("PostgreSQL disconnected successfully");
-  } catch (error) {
-    logger.error(
-      {
-        err: error,
-      },
-      "Failed to disconnect from PostgreSQL",
-    );
-    exitCode = 1;
-  }
 
-  if (exitCode === 0) {
     logger.info("Application shutdown completed");
-  } else {
-    logger.error("Application shutdown completed with errors");
-  }
+    process.exit(0);
+  } catch (error) {
+    logger.error({ err: error }, "Application shutdown failed");
 
-  process.exitCode = exitCode;
-  process.exit(exitCode);
+    process.exit(1);
+  }
 };
 
 process.once("SIGINT", () => {
