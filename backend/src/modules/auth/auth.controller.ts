@@ -122,7 +122,7 @@ export const resetPassword: RequestHandler = async (
 ) => {
   try {
     const resetToken = getPasswordResetCookie(request);
-
+ 
     if (!resetToken) {
       throw new AppError(
         "The password reset session is invalid or has expired",
@@ -138,6 +138,7 @@ export const resetPassword: RequestHandler = async (
     clearPasswordResetCookie(response);
 
     response.setHeader("Cache-Control", "no-store");
+    response.setHeader("Pragma", "no-cache");
 
     response.status(200).json({
       success: true,
@@ -145,7 +146,17 @@ export const resetPassword: RequestHandler = async (
         "Password reset successfully. You can now log in with your new password.",
     });
   } catch (error) {
-    clearPasswordResetCookie(response);
+    /*
+     * Invalid or expired reset sessions must be removed.
+     * Recoverable validation errors keep the cookie so
+     * the user can correct the password and retry.
+     */
+    if (
+      error instanceof AppError &&
+      error.code === "INVALID_OR_EXPIRED_RESET_SESSION"
+    ) {
+      clearPasswordResetCookie(response);
+    }
 
     next(error);
   }

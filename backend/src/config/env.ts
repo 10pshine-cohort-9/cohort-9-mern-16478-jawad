@@ -7,6 +7,21 @@ const booleanStringSchema = z
   .default("false")
   .transform((value) => value === "true");
 
+const postgresUrlSchema = z
+  .string()
+  .url("DATABASE_URL must be a valid URL")
+  .refine(
+    (value) => {
+      const protocol = new URL(value).protocol;
+
+      return protocol === "postgresql:" || protocol === "postgres:";
+    },
+    {
+      message:
+        "DATABASE_URL must use the postgresql:// or postgres:// protocol",
+    },
+  );
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -16,18 +31,17 @@ const envSchema = z.object({
 
   CLIENT_URL: z.string().url(),
 
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  DATABASE_URL: postgresUrlSchema,
 
   JWT_SECRET: z
     .string()
     .min(32, "JWT_SECRET must contain at least 32 characters"),
 
-  // JWT_EXPIRES_IN: z.string().default("7d"),
   JWT_EXPIRES_IN: z
     .string()
     .regex(
-      /^\d+(s|m|h|d)$/,
-      "JWT_EXPIRES_IN must use a value such as 30m, 1h or 7d",
+      /^[1-9]\d*(s|m|h|d)$/,
+      "JWT_EXPIRES_IN must be a positive duration such as 30m, 1h or 7d",
     )
     .default("7d"),
   JWT_ISSUER: z.string().default("notes-app-api"),

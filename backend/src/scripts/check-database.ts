@@ -40,7 +40,18 @@ const checkDatabaseConnection = async (): Promise<void> => {
 
     process.exitCode = 1;
   } finally {
-    await prisma.$disconnect();
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      logger.error(
+        {
+          err: disconnectError,
+        },
+        "Failed to disconnect from PostgreSQL",
+      );
+
+      process.exitCode = 1;
+    }
   }
 };
 
