@@ -27,6 +27,21 @@ const booleanStringSchema = z
   .default("false")
   .transform((value) => value === "true");
 
+const postgresUrlSchema = z
+  .string()
+  .url("DATABASE_URL must be a valid URL")
+  .refine(
+    (value) => {
+      const protocol = new URL(value).protocol;
+
+      return protocol === "postgresql:" || protocol === "postgres:";
+    },
+    {
+      message:
+        "DATABASE_URL must use the postgresql:// or postgres:// protocol",
+    },
+  );
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -39,7 +54,7 @@ const envSchema = z.object({
       "CLIENT_URL must be a valid HTTP or HTTPS origin without a path, query, hash, or credentials",
   }),
 
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  DATABASE_URL: postgresUrlSchema,
 
   JWT_SECRET: z
     .string()
