@@ -37,12 +37,11 @@ const envSchema = z.object({
     .string()
     .min(32, "JWT_SECRET must contain at least 32 characters"),
 
-  // JWT_EXPIRES_IN: z.string().default("7d"),
   JWT_EXPIRES_IN: z
     .string()
     .regex(
-      /^\d+(s|m|h|d)$/,
-      "JWT_EXPIRES_IN must use a value such as 30m, 1h or 7d",
+      /^[1-9]\d*(s|m|h|d)$/,
+      "JWT_EXPIRES_IN must be a positive duration such as 30m, 1h or 7d",
     )
     .default("7d"),
   JWT_ISSUER: z.string().default("notes-app-api"),
