@@ -1,6 +1,7 @@
 import { app } from "./app.js";
 import { env } from "./config/env.js";
 import { logger } from "./lib/logger.js";
+import { prisma } from "./lib/prisma.js";
 
 const server = app.listen(env.PORT, () => {
   logger.info(
@@ -28,27 +29,68 @@ let isShuttingDown = false;
 
 const shutdown = (signal: string): void => {
   if (isShuttingDown) {
-    logger.warn({ signal }, "Server shutdown is already in progress");
+    logger.warn(
+      {
+        signal,
+      },
+      "Server shutdown is already in progress",
+    );
 
     return;
   }
 
   isShuttingDown = true;
 
-  logger.info({ signal }, "Server shutdown started");
+  logger.info(
+    {
+      signal,
+    },
+    "Server shutdown started",
+  );
 
-  server.close((error) => {
+  server.close(async (error) => {
+    let exitCode = 0;
+
     if (error) {
-      logger.error({ error }, "Server shutdown failed");
+      logger.error(
+        {
+          error,
+        },
+        "HTTP server shutdown failed",
+      );
 
-      process.exit(1);
+      exitCode = 1;
+    } else {
+      logger.info("HTTP server closed successfully");
     }
 
-    logger.info("Server closed successfully");
+    try {
+      await prisma.$disconnect();
 
-    process.exit(0);
+      logger.info("Database connection closed successfully");
+    } catch (disconnectError) {
+      logger.error(
+        {
+          err: disconnectError,
+        },
+        "Database disconnection failed",
+      );
+
+      exitCode = 1;
+    }
+
+    if (exitCode === 0) {
+      logger.info("Server shutdown completed successfully");
+    }
+
+    process.exit(exitCode);
   });
 };
 
-process.on("SIGINT", () => shutdown("SIGINT"));
-process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => {
+  shutdown("SIGINT");
+});
+
+process.on("SIGTERM", () => {
+  shutdown("SIGTERM");
+});
