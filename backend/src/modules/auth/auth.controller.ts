@@ -179,7 +179,7 @@ export const resetPassword: RequestHandler = async (
 ) => {
   try {
     const resetToken = getPasswordResetCookie(request);
-
+ 
     if (!resetToken) {
       throw new AppError(
         "The password reset session is invalid or has expired",
@@ -199,6 +199,7 @@ export const resetPassword: RequestHandler = async (
     clearPasswordResetCookie(response);
 
     response.setHeader("Cache-Control", "no-store");
+    response.setHeader("Pragma", "no-cache");
 
     response.status(200).json({
       success: true,
@@ -207,6 +208,7 @@ export const resetPassword: RequestHandler = async (
     });
   } catch (error) {
 <<<<<<< HEAD
+<<<<<<< HEAD
     /*
      * Sirf invalid ya expired reset session
      * par reset cookie clear hogi.
@@ -214,6 +216,12 @@ export const resetPassword: RequestHandler = async (
      * Temporary server error ya recoverable
      * validation error par valid session
      * preserve rahegi.
+=======
+    /*
+     * Invalid or expired reset sessions must be removed.
+     * Recoverable validation errors keep the cookie so
+     * the user can correct the password and retry.
+>>>>>>> 4843b1e (fix(auth): preserve reset session on retryable errors)
      */
     if (
       error instanceof AppError &&
@@ -221,9 +229,12 @@ export const resetPassword: RequestHandler = async (
     ) {
       clearPasswordResetCookie(response);
     }
+<<<<<<< HEAD
 =======
     clearPasswordResetCookie(response);
 >>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
+=======
+>>>>>>> 4843b1e (fix(auth): preserve reset session on retryable errors)
 
     next(error);
   }
