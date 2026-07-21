@@ -178,6 +178,7 @@ export const registerUser = async (
 };
 
 export const loginUser = async (input: LoginInput): Promise<LoginResult> => {
+<<<<<<< HEAD
   try {
     const account = await authRepository.findUserForLogin(input.identifier);
 
@@ -220,6 +221,39 @@ export const loginUser = async (input: LoginInput): Promise<LoginResult> => {
       cause: error,
     });
   }
+=======
+  const account = await authRepository.findUserForLogin(input.identifier);
+
+  if (!account) {
+    throw createInvalidCredentialsError();
+  }
+
+  const passwordMatches = await verifyPassword(
+    input.password,
+    account.passwordHash,
+  );
+
+  if (!passwordMatches) {
+    throw createInvalidCredentialsError();
+  }
+
+  const user = mapLoginUserToPublicUser(account);
+
+  const accessToken = createAccessToken(user.id);
+
+  logger.info(
+    {
+      userId: user.id,
+      username: user.username,
+    },
+    "User logged in successfully",
+  );
+
+  return {
+    user,
+    accessToken,
+  };
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 };
 
 const createInvalidOtpError = (): AppError => {
@@ -265,6 +299,7 @@ export const requestPasswordReset = async (
     expiresAt,
   );
 
+<<<<<<< HEAD
   void sendPasswordResetOtpEmail({
     email: user.email,
     fullName: user.fullName,
@@ -352,11 +387,21 @@ export const verifyPasswordResetOtp = async (
       resetTokenHash,
       resetTokenExpiresAt,
     );
+=======
+  try {
+    await sendPasswordResetOtpEmail({
+      email: user.email,
+      fullName: user.fullName,
+      otp,
+      expiresInMinutes: env.PASSWORD_RESET_OTP_TTL_MINUTES,
+    });
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 
     logger.info(
       {
         userId: user.id,
       },
+<<<<<<< HEAD
       "Password reset OTP verified",
     );
 
@@ -373,10 +418,88 @@ export const verifyPasswordResetOtp = async (
         code: "PASSWORD_RESET_OTP_VERIFICATION_FAILED",
         cause: error,
       },
+=======
+      "Password reset OTP email sent",
+    );
+  } catch (error) {
+    logger.error(
+      {
+        err: error,
+        userId: user.id,
+      },
+      "Password reset OTP email could not be delivered",
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
     );
   }
 };
 
+<<<<<<< HEAD
+=======
+export const verifyPasswordResetOtp = async (
+  input: VerifyResetOtpInput,
+): Promise<string> => {
+  const user = await authRepository.findUserForPasswordReset(input.email);
+
+  if (!user) {
+    throw createInvalidOtpError();
+  }
+
+  const challenge = await authRepository.findPasswordResetByUserId(user.id);
+
+  const now = new Date();
+
+  if (
+    !challenge ||
+    challenge.expiresAt <= now ||
+    challenge.verifiedAt !== null ||
+    challenge.attempts >= env.PASSWORD_RESET_MAX_ATTEMPTS
+  ) {
+    if (challenge) {
+      await authRepository.deletePasswordResetById(challenge.id);
+    }
+
+    throw createInvalidOtpError();
+  }
+
+  const otpMatches = verifyPasswordResetOtpHash(input.otp, challenge.otpHash);
+
+  if (!otpMatches) {
+    const nextAttemptCount = challenge.attempts + 1;
+
+    await authRepository.incrementPasswordResetAttempts(challenge.id);
+
+    if (nextAttemptCount >= env.PASSWORD_RESET_MAX_ATTEMPTS) {
+      await authRepository.deletePasswordResetById(challenge.id);
+    }
+
+    throw createInvalidOtpError();
+  }
+
+  const resetToken = generatePasswordResetToken();
+
+  const resetTokenHash = hashPasswordResetToken(resetToken);
+
+  const resetTokenExpiresAt = new Date(
+    Date.now() + env.PASSWORD_RESET_TOKEN_TTL_MINUTES * 60 * 1000,
+  );
+
+  await authRepository.markPasswordResetVerified(
+    challenge.id,
+    resetTokenHash,
+    resetTokenExpiresAt,
+  );
+
+  logger.info(
+    {
+      userId: user.id,
+    },
+    "Password reset OTP verified",
+  );
+
+  return resetToken;
+};
+
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 export const resetUserPassword = async (
   input: ResetPasswordInput,
   resetToken: string,
@@ -440,6 +563,7 @@ export const resetUserPassword = async (
 };
 
 export const getCurrentUser = async (userId: string): Promise<PublicUser> => {
+<<<<<<< HEAD
   try {
     const user = await authRepository.findPublicUserById(userId);
 
@@ -460,4 +584,15 @@ export const getCurrentUser = async (userId: string): Promise<PublicUser> => {
       cause: error,
     });
   }
+=======
+  const user = await authRepository.findPublicUserById(userId);
+
+  if (!user) {
+    throw new AppError("Authenticated user no longer exists", 401, {
+      code: "AUTHENTICATED_USER_NOT_FOUND",
+    });
+  }
+
+  return user;
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 };

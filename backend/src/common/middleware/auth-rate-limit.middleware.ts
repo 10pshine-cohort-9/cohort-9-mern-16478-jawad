@@ -1,5 +1,6 @@
 import { rateLimit } from "express-rate-limit";
 
+<<<<<<< HEAD
 export const registerLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
@@ -27,6 +28,8 @@ export const loginLimiter = rateLimit({
   },
 });
 
+=======
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 export const forgotPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,

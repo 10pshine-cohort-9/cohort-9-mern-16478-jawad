@@ -2,8 +2,11 @@ import { AppError } from "../errors/app-error.js";
 import { cloudinary } from "../../lib/cloudinary.js";
 import type { UploadedProfileImage } from "../../modules/auth/auth.types.js";
 
+<<<<<<< HEAD
 const CLOUDINARY_UPLOAD_TIMEOUT_MS = 15_000;
 
+=======
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 export const uploadProfileImage = async (
   file: Express.Multer.File,
 ): Promise<UploadedProfileImage> => {
@@ -14,8 +17,11 @@ export const uploadProfileImage = async (
         resource_type: "image",
         unique_filename: true,
         overwrite: false,
+<<<<<<< HEAD
         timeout: CLOUDINARY_UPLOAD_TIMEOUT_MS,
 
+=======
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
         transformation: [
           {
             width: 512,
@@ -31,6 +37,7 @@ export const uploadProfileImage = async (
       },
       (error, result) => {
         if (error) {
+<<<<<<< HEAD
           reject(
             new AppError("Profile image upload failed", 502, {
               code: "PROFILE_IMAGE_UPLOAD_FAILED",
@@ -38,6 +45,9 @@ export const uploadProfileImage = async (
             }),
           );
 
+=======
+          reject(error);
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
           return;
         }
 
@@ -47,7 +57,10 @@ export const uploadProfileImage = async (
               code: "PROFILE_IMAGE_UPLOAD_FAILED",
             }),
           );
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
           return;
         }
 
@@ -63,6 +76,7 @@ export const uploadProfileImage = async (
 };
 
 export const deleteProfileImage = async (publicId: string): Promise<void> => {
+<<<<<<< HEAD
   try {
     const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: "image",
@@ -92,4 +106,10 @@ export const deleteProfileImage = async (publicId: string): Promise<void> => {
       cause: error,
     });
   }
+=======
+  await cloudinary.uploader.destroy(publicId, {
+    resource_type: "image",
+    invalidate: true,
+  });
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 };

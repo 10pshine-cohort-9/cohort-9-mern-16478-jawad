@@ -1,6 +1,10 @@
 import type { RequestHandler } from "express";
 
 import { AppError } from "../../common/errors/app-error.js";
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 import {
   clearAuthCookie,
   clearPasswordResetCookie,
@@ -8,6 +12,10 @@ import {
   setAuthCookie,
   setPasswordResetCookie,
 } from "../../common/utils/auth-cookie.js";
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 import type {
   ForgotPasswordInput,
   LoginInput,
@@ -15,6 +23,10 @@ import type {
   ResetPasswordInput,
   VerifyResetOtpInput,
 } from "./auth.schema.js";
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 import {
   getCurrentUser,
   loginUser,
@@ -24,6 +36,7 @@ import {
   verifyPasswordResetOtp,
 } from "./auth.service.js";
 
+<<<<<<< HEAD
 type AuthBodyRequestHandler<TBody> = RequestHandler<
   Record<string, never>,
   unknown,
@@ -35,6 +48,9 @@ export const register: AuthBodyRequestHandler<RegisterInput> = async (
   response,
   next,
 ) => {
+=======
+export const register: RequestHandler = async (request, response, next) => {
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
   try {
     if (!request.file) {
       throw new AppError("Profile image is required", 400, {
@@ -42,7 +58,14 @@ export const register: AuthBodyRequestHandler<RegisterInput> = async (
       });
     }
 
+<<<<<<< HEAD
     const user = await registerUser(request.body, request.file);
+=======
+    const user = await registerUser(
+      request.body as RegisterInput,
+      request.file,
+    );
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 
     response.status(201).json({
       success: true,
@@ -56,6 +79,7 @@ export const register: AuthBodyRequestHandler<RegisterInput> = async (
   }
 };
 
+<<<<<<< HEAD
 export const login: AuthBodyRequestHandler<LoginInput> = async (
   request,
   response,
@@ -63,6 +87,11 @@ export const login: AuthBodyRequestHandler<LoginInput> = async (
 ) => {
   try {
     const result = await loginUser(request.body);
+=======
+export const login: RequestHandler = async (request, response, next) => {
+  try {
+    const result = await loginUser(request.body as LoginInput);
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 
     setAuthCookie(response, result.accessToken);
 
@@ -82,11 +111,21 @@ export const login: AuthBodyRequestHandler<LoginInput> = async (
   }
 };
 
+<<<<<<< HEAD
 export const forgotPassword: AuthBodyRequestHandler<
   ForgotPasswordInput
 > = async (request, response, next) => {
   try {
     await requestPasswordReset(request.body);
+=======
+export const forgotPassword: RequestHandler = async (
+  request,
+  response,
+  next,
+) => {
+  try {
+    await requestPasswordReset(request.body as ForgotPasswordInput);
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 
     response.status(200).json({
       success: true,
@@ -98,11 +137,23 @@ export const forgotPassword: AuthBodyRequestHandler<
   }
 };
 
+<<<<<<< HEAD
 export const verifyResetOtp: AuthBodyRequestHandler<
   VerifyResetOtpInput
 > = async (request, response, next) => {
   try {
     const resetToken = await verifyPasswordResetOtp(request.body);
+=======
+export const verifyResetOtp: RequestHandler = async (
+  request,
+  response,
+  next,
+) => {
+  try {
+    const resetToken = await verifyPasswordResetOtp(
+      request.body as VerifyResetOtpInput,
+    );
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 
     setPasswordResetCookie(response, resetToken);
 
@@ -117,7 +168,11 @@ export const verifyResetOtp: AuthBodyRequestHandler<
   }
 };
 
+<<<<<<< HEAD
 export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
+=======
+export const resetPassword: RequestHandler = async (
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
   request,
   response,
   next,
@@ -135,7 +190,11 @@ export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
       );
     }
 
+<<<<<<< HEAD
     await resetUserPassword(request.body, resetToken);
+=======
+    await resetUserPassword(request.body as ResetPasswordInput, resetToken);
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 
     clearPasswordResetCookie(response);
 
@@ -147,6 +206,7 @@ export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
         "Password reset successfully. You can now log in with your new password.",
     });
   } catch (error) {
+<<<<<<< HEAD
     /*
      * Sirf invalid ya expired reset session
      * par reset cookie clear hogi.
@@ -161,6 +221,9 @@ export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
     ) {
       clearPasswordResetCookie(response);
     }
+=======
+    clearPasswordResetCookie(response);
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 
     next(error);
   }
@@ -168,7 +231,10 @@ export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
 
 export const logout: RequestHandler = (_request, response) => {
   clearAuthCookie(response);
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
   clearPasswordResetCookie(response);
 
   response.setHeader("Cache-Control", "no-store");
