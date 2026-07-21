@@ -1,6 +1,7 @@
 import { app } from "./app.js";
 import { env } from "./config/env.js";
 import { logger } from "./lib/logger.js";
+import { prisma } from "./lib/prisma.js";
 
 const server = app.listen(env.PORT, () => {
   logger.info(
@@ -15,14 +16,29 @@ const server = app.listen(env.PORT, () => {
 const shutdown = (signal: string): void => {
   logger.info({ signal }, "Server shutdown started");
 
-  server.close((error) => {
+  server.close(async (error) => {
     if (error) {
-      logger.error({ error }, "Server shutdown failed");
+      logger.error({ err: error }, "HTTP server shutdown failed");
       process.exit(1);
     }
 
-    logger.info("Server closed successfully");
-    process.exit(0);
+    try {
+      await prisma.$disconnect();
+
+      logger.info("Database connection closed successfully");
+      logger.info("Server shutdown completed successfully");
+
+      process.exit(0);
+    } catch (disconnectError) {
+      logger.error(
+        {
+          err: disconnectError,
+        },
+        "Database disconnection failed",
+      );
+
+      process.exit(1);
+    }
   });
 };
 

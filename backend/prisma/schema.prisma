@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+model User {
+  id              String   @id @default(uuid()) @db.Uuid
+  fullName        String   @map("full_name") @db.VarChar(120)
+  username        String   @unique @db.VarChar(30)
+  email           String   @unique @db.VarChar(255)
+  phoneNumber     String   @unique @map("phone_number") @db.VarChar(20)
+  city            String   @db.VarChar(100)
+  gender          Gender
+  profileImageUrl String?  @map("profile_image_url") @db.VarChar(500)
+  passwordHash    String   @map("password_hash") @db.VarChar(255)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  notes Note[]
+
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Note {
+  id        String   @id @default(uuid()) @db.Uuid
+  title     String   @db.VarChar(200)
+  content   String   @db.Text
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("notes")
+}
