@@ -22,6 +22,20 @@ const postgresUrlSchema = z
     },
   );
 
+const isValidHttpOrigin = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return false;
+    }
+
+    return url.pathname === "/" && url.search === "" && url.hash === "";
+  } catch {
+    return false;
+  }
+};
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])

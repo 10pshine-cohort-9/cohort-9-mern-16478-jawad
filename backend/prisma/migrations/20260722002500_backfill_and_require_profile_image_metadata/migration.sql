@@ -31,25 +31,15 @@ BEGIN
        OR "profile_image_public_id" IS NULL
   ) THEN
     RAISE EXCEPTION
-      'Cannot enforce required profile image metadata: existing users need valid profile-image data';
+      'Cannot enforce required profile image metadata: existing users need valid Cloudinary values';
   END IF;
 END
 $$;
 
-
-ALTER TABLE "users" 
-  ADD CONSTRAINT "profile_image_url_not_null" 
-  CHECK ("profile_image_url" IS NOT NULL) NOT VALID;
-
-ALTER TABLE "users" 
-  ADD CONSTRAINT "profile_image_public_id_not_null" 
-  CHECK ("profile_image_public_id" IS NOT NULL) NOT VALID;
-
-
-ALTER TABLE "users" VALIDATE CONSTRAINT "profile_image_url_not_null";
-ALTER TABLE "users" VALIDATE CONSTRAINT "profile_image_public_id_not_null";
-
-
+/*
+  Metadata has been backfilled and checked, so both fields
+  can now safely become required.
+*/
 ALTER TABLE "users"
   ALTER COLUMN "profile_image_url" SET NOT NULL,
   ALTER COLUMN "profile_image_public_id" SET NOT NULL;
