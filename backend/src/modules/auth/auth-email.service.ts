@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-import { AppError } from "../../common/errors/app-error.js";
-=======
->>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 import { env } from "../../config/env.js";
 import { mailer } from "../../lib/mailer.js";
 
@@ -183,54 +179,6 @@ export const sendWelcomeEmail = async ({
     return;
   }
 
-<<<<<<< HEAD
-  try {
-    const loginUrl = new URL("/login", env.CLIENT_URL).toString();
-
-    await mailer.sendMail({
-      from: {
-        name: env.MAIL_FROM_NAME,
-        address: env.MAIL_FROM_EMAIL,
-      },
-
-      to: email,
-
-      subject: "Welcome to Notes App - Your account is ready",
-
-      text: [
-        `Hello ${fullName},`,
-        "",
-        "Your Notes App account has been created successfully.",
-        "You can now log in and start managing your personal notes.",
-        "",
-        `Login: ${loginUrl}`,
-        "",
-        "Regards,",
-        "Notes App Team",
-      ].join("\n"),
-
-      html: renderEmailTemplate({
-        heading: "Welcome to Notes App",
-        greeting: `Hello ${fullName},`,
-
-        paragraphs: [
-          "Your Notes App account has been created successfully.",
-          "You can now create, organize and securely manage your personal notes.",
-        ],
-
-        action: {
-          label: "Log in to Notes App",
-          url: loginUrl,
-        },
-      }),
-    });
-  } catch (error) {
-    throw new AppError("Welcome email could not be sent", 502, {
-      code: "WELCOME_EMAIL_SEND_FAILED",
-      cause: error,
-    });
-  }
-=======
   const loginUrl = new URL("/login", env.CLIENT_URL).toString();
 
   await mailer.sendMail({
@@ -270,7 +218,6 @@ export const sendWelcomeEmail = async ({
       },
     }),
   });
->>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 };
 
 export const sendPasswordResetOtpEmail = async ({
@@ -283,54 +230,6 @@ export const sendPasswordResetOtpEmail = async ({
     return;
   }
 
-<<<<<<< HEAD
-  try {
-    await mailer.sendMail({
-      from: {
-        name: env.MAIL_FROM_NAME,
-        address: env.MAIL_FROM_EMAIL,
-      },
-
-      to: email,
-
-      subject: "Your Notes App password reset code",
-
-      text: [
-        `Hello ${fullName},`,
-        "",
-        "We received a request to reset your Notes App password.",
-        `Your verification code is: ${otp}`,
-        `This code expires in ${expiresInMinutes} minutes.`,
-        "",
-        "Do not share this code with anyone.",
-        "If you did not request a password reset, you can ignore this email.",
-        "",
-        "Regards,",
-        "Notes App Team",
-      ].join("\n"),
-
-      html: renderEmailTemplate({
-        heading: "Reset your password",
-        greeting: `Hello ${fullName},`,
-
-        paragraphs: [
-          "We received a request to reset the password for your Notes App account.",
-          `Enter the following code to continue. This code expires in ${expiresInMinutes} minutes.`,
-        ],
-
-        code: otp,
-
-        notice:
-          "Do not share this verification code with anyone. If you did not request a password reset, you can safely ignore this email.",
-      }),
-    });
-  } catch (error) {
-    throw new AppError("Password reset OTP email could not be sent", 502, {
-      code: "PASSWORD_RESET_OTP_EMAIL_SEND_FAILED",
-      cause: error,
-    });
-  }
-=======
   await mailer.sendMail({
     from: {
       name: env.MAIL_FROM_NAME,
@@ -370,7 +269,6 @@ export const sendPasswordResetOtpEmail = async ({
         "Do not share this verification code with anyone. If you did not request a password reset, you can safely ignore this email.",
     }),
   });
->>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 };
 
 export const sendPasswordResetSuccessEmail = async ({
@@ -381,64 +279,6 @@ export const sendPasswordResetSuccessEmail = async ({
     return;
   }
 
-<<<<<<< HEAD
-  try {
-    const loginUrl = new URL("/login", env.CLIENT_URL).toString();
-
-    await mailer.sendMail({
-      from: {
-        name: env.MAIL_FROM_NAME,
-        address: env.MAIL_FROM_EMAIL,
-      },
-
-      to: email,
-
-      subject: "Your Notes App password was changed",
-
-      text: [
-        `Hello ${fullName},`,
-        "",
-        "Your Notes App password has been reset successfully.",
-        "You can now log in using your new password.",
-        "",
-        `Login: ${loginUrl}`,
-        "",
-        "If you did not make this change, secure your email account immediately.",
-        "",
-        "Regards,",
-        "Notes App Team",
-      ].join("\n"),
-
-      html: renderEmailTemplate({
-        heading: "Password reset successful",
-
-        greeting: `Hello ${fullName},`,
-
-        paragraphs: [
-          "Your Notes App password has been reset successfully.",
-          "You can now log in to your account using your new password.",
-        ],
-
-        action: {
-          label: "Log in with new password",
-          url: loginUrl,
-        },
-
-        notice:
-          "If you did not make this change, secure your email account immediately.",
-      }),
-    });
-  } catch (error) {
-    throw new AppError(
-      "Password reset confirmation email could not be sent",
-      502,
-      {
-        code: "PASSWORD_RESET_SUCCESS_EMAIL_SEND_FAILED",
-        cause: error,
-      },
-    );
-  }
-=======
   const loginUrl = new URL("/login", env.CLIENT_URL).toString();
 
   await mailer.sendMail({
@@ -484,5 +324,4 @@ export const sendPasswordResetSuccessEmail = async ({
         "If you did not make this change, secure your email account immediately.",
     }),
   });
->>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 };
