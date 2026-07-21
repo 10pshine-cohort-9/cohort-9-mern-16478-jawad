@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler } from "express";
+import multer from "multer";
 
 import { env } from "../../config/env.js";
 import { logger } from "../../lib/logger.js";
@@ -14,6 +15,39 @@ interface ErrorResponseBody {
 }
 
 /**
+ * Converts unknown errors into the application's standard AppError format.
+ */
+const normalizeError = (error: unknown): AppError => {
+  // Existing application errors ko same form mein return karega.
+  if (error instanceof AppError) {
+    return error;
+  }
+
+  // Multer file-upload errors handle karega.
+  if (error instanceof multer.MulterError) {
+    if (error.code === "LIMIT_FILE_SIZE") {
+      return new AppError(
+        `Profile image cannot exceed ${env.MAX_PROFILE_IMAGE_SIZE_MB} MB`,
+        400,
+        {
+          code: "PROFILE_IMAGE_TOO_LARGE",
+        },
+      );
+    }
+
+    return new AppError("Profile image upload request is invalid", 400, {
+      code: "PROFILE_IMAGE_UPLOAD_ERROR",
+    });
+  }
+
+  // Baqi unknown errors ko internal server error banayega.
+  return new AppError("Internal server error", 500, {
+    code: "INTERNAL_SERVER_ERROR",
+    cause: error,
+  });
+};
+
+/**
  * Handles every application error from one central location.
  *
  * Important:
@@ -26,13 +60,7 @@ export const globalErrorHandler: ErrorRequestHandler = (
   response,
   _next,
 ) => {
-  const normalizedError =
-    error instanceof AppError
-      ? error
-      : new AppError("Internal server error", 500, {
-          code: "INTERNAL_SERVER_ERROR",
-          cause: error,
-        });
+  const normalizedError = normalizeError(error);
 
   const requestId = response.getHeader("X-Request-Id");
 

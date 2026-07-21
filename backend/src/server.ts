@@ -91,9 +91,8 @@ const shutdown = (signal: string): void => {
     }
 
     /*
-     * Direct process.exit() avoid karte hain.
-     * Natural shutdown Pino transport ko pending
-     * logs complete karne ka time deti hai.
+     * Natural process termination allows the Pino
+     * transport to complete pending shutdown logs.
      */
     process.exitCode = exitCode;
   });
