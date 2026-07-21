@@ -307,12 +307,12 @@ export const verifyPasswordResetOtp = async (
 
   const otpMatches = verifyPasswordResetOtpHash(input.otp, challenge.otpHash);
 
+ 
   if (!otpMatches) {
-    const nextAttemptCount = challenge.attempts + 1;
+    const updatedChallenge =
+      await authRepository.incrementPasswordResetAttempts(challenge.id);
 
-    await authRepository.incrementPasswordResetAttempts(challenge.id);
-
-    if (nextAttemptCount >= env.PASSWORD_RESET_MAX_ATTEMPTS) {
+    if (updatedChallenge.attempts >= env.PASSWORD_RESET_MAX_ATTEMPTS) {
       await authRepository.deletePasswordResetById(challenge.id);
     }
 
