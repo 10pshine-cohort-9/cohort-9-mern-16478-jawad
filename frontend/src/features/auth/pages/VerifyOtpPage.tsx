@@ -1,14 +1,7 @@
-import { AuthPlaceholderPage } from "@/features/auth/components/AuthPlaceholderPage";
+import { AuthPage } from "@/features/auth/pages/AuthPage";
 
 const VerifyOtpPage = () => {
-  return (
-    <AuthPlaceholderPage
-      title="Verify code"
-      description="Enter the six-digit verification code sent to your email address."
-      linkLabel="Back to forgot password"
-      linkTo="/forgot-password"
-    />
-  );
+  return <AuthPage initialMode="verifyOtp" />;
 };
 
 export default VerifyOtpPage;
