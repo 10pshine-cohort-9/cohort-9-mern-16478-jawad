@@ -60,7 +60,10 @@ export const globalErrorHandler: ErrorRequestHandler = (
     requestId,
   };
 
-  if (normalizedError.details !== undefined) {
+  if (
+    normalizedError.details !== undefined &&
+    !(env.NODE_ENV === "production" && normalizedError.statusCode >= 500)
+  ) {
     responseBody.errors = normalizedError.details;
   }
 

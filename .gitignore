@@ -44,3 +44,7 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+
+# Runtime uploads
+uploads/
+backend/uploads/

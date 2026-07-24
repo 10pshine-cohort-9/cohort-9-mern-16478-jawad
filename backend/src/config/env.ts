@@ -1,14 +1,34 @@
 import "dotenv/config";
 import { z } from "zod";
 
+const isValidHttpOrigin = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+
+    return (
+      (url.protocol === "http:" || url.protocol === "https:") &&
+      url.username === "" &&
+      url.password === "" &&
+      url.pathname === "/" &&
+      url.search === "" &&
+      url.hash === ""
+    );
+  } catch {
+    return false;
+  }
+};
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
 
-  PORT: z.coerce.number().int().positive().default(5000),
+  PORT: z.coerce.number().int().min(1).max(65_535).default(5000),
 
-  CLIENT_URL: z.string().url(),
+  CLIENT_URL: z.string().url().refine(isValidHttpOrigin, {
+    message:
+      "CLIENT_URL must be a valid HTTP or HTTPS origin without a path, query, hash, or credentials",
+  }),
 
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 
@@ -24,7 +44,7 @@ const envSchema = z.object({
 
   PROFILE_UPLOAD_DIR: z.string().default("uploads/profiles"),
 
-  MAX_PROFILE_IMAGE_SIZE_MB: z.coerce.number().positive().default(5)
+  MAX_PROFILE_IMAGE_SIZE_MB: z.coerce.number().positive().default(5),
 });
 
 const result = envSchema.safeParse(process.env);
@@ -35,8 +55,8 @@ if (!result.success) {
   console.error(
     result.error.issues.map((issue) => ({
       field: issue.path.join("."),
-      message: issue.message
-    }))
+      message: issue.message,
+    })),
   );
 
   process.exit(1);
