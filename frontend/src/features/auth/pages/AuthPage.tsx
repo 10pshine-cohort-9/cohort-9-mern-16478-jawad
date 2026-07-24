@@ -4,19 +4,25 @@ import { useState } from "react";
 import { AuthForm } from "@/features/auth/components/AuthForm";
 import { ForgotPasswordBrandPanel } from "@/features/auth/components/ForgotPasswordBrandPanel";
 import { WelcomePanel } from "@/features/auth/components/WelcomePanel";
+import "@/features/auth/styles/auth.css";
 import {
   authPathByMode,
   isRecoveryMode,
   type AuthMode,
 } from "@/features/auth/types/auth-mode";
-import "@/features/auth/styles/auth.css";
 
 interface AuthPageProps {
   initialMode?: AuthMode;
 }
 
+const RESET_EMAIL_STORAGE_KEY = "notes-app-password-reset-email";
+
 export const AuthPage = ({ initialMode = "signIn" }: AuthPageProps) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
+
+  const [recoveryEmail, setRecoveryEmail] = useState(() => {
+    return window.sessionStorage.getItem(RESET_EMAIL_STORAGE_KEY) ?? "";
+  });
 
   const shouldReduceMotion = useReducedMotion();
 
@@ -35,13 +41,27 @@ export const AuthPage = ({ initialMode = "signIn" }: AuthPageProps) => {
         mass: 0.9,
       };
 
+  const saveRecoveryEmail = (email: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    setRecoveryEmail(normalizedEmail);
+
+    window.sessionStorage.setItem(RESET_EMAIL_STORAGE_KEY, normalizedEmail);
+  };
+
+  const clearRecoveryEmail = () => {
+    setRecoveryEmail("");
+
+    window.sessionStorage.removeItem(RESET_EMAIL_STORAGE_KEY);
+  };
+
   const handleModeChange = (nextMode: AuthMode) => {
+    if (nextMode === "signIn" || nextMode === "signUp") {
+      clearRecoveryEmail();
+    }
+
     setMode(nextMode);
 
-    /*
-     * URL update hota hai lekin React page reload
-     * ya separate route navigation nahi hoti.
-     */
     window.history.replaceState({}, "", authPathByMode[nextMode]);
   };
 
@@ -59,9 +79,8 @@ export const AuthPage = ({ initialMode = "signIn" }: AuthPageProps) => {
             isSignup ? "lg:max-h-[820px]" : "lg:max-h-[680px]"
           }`}
         >
-          {/* Desktop sliding layout */}
+          {/* Desktop */}
           <div className="relative hidden h-full min-h-0 overflow-hidden lg:block">
-            {/* Form panel */}
             <motion.div
               animate={{
                 left: formIsOnRight ? "37%" : "0%",
@@ -70,10 +89,14 @@ export const AuthPage = ({ initialMode = "signIn" }: AuthPageProps) => {
               initial={false}
               transition={panelTransition}
             >
-              <AuthForm mode={mode} onModeChange={handleModeChange} />
+              <AuthForm
+                mode={mode}
+                onModeChange={handleModeChange}
+                onRecoveryEmailChange={saveRecoveryEmail}
+                recoveryEmail={recoveryEmail}
+              />
             </motion.div>
 
-            {/* Image / branding panel */}
             <motion.div
               animate={{
                 left: formIsOnRight ? "0%" : "63%",
@@ -90,7 +113,12 @@ export const AuthPage = ({ initialMode = "signIn" }: AuthPageProps) => {
           <div className="lg:hidden">
             <div className="min-h-48">{visualPanel}</div>
 
-            <AuthForm mode={mode} onModeChange={handleModeChange} />
+            <AuthForm
+              mode={mode}
+              onModeChange={handleModeChange}
+              onRecoveryEmailChange={saveRecoveryEmail}
+              recoveryEmail={recoveryEmail}
+            />
           </div>
         </section>
       </main>

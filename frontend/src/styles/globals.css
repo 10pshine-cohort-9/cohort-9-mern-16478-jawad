@@ -68,3 +68,18 @@ a {
 #root {
   min-height: 100vh;
 }
+
+button:not(:disabled),
+a[href],
+label[for],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
