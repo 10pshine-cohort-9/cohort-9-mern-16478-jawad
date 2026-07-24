@@ -10,9 +10,16 @@ import type { AuthMode } from "@/features/auth/types/auth-mode";
 interface AuthFormProps {
   mode: AuthMode;
   onModeChange: (mode: AuthMode) => void;
+  onRecoveryEmailChange: (email: string) => void;
+  recoveryEmail: string;
 }
 
-export const AuthForm = ({ mode, onModeChange }: AuthFormProps) => {
+export const AuthForm = ({
+  mode,
+  onModeChange,
+  onRecoveryEmailChange,
+  recoveryEmail,
+}: AuthFormProps) => {
   const isSignup = mode === "signUp";
 
   const renderForm = () => {
@@ -32,13 +39,18 @@ export const AuthForm = ({ mode, onModeChange }: AuthFormProps) => {
         return (
           <ForgotPasswordForm
             onBackToSignIn={() => onModeChange("signIn")}
-            onCodeSent={() => onModeChange("verifyOtp")}
+            onCodeSent={(email) => {
+              onRecoveryEmailChange(email);
+
+              onModeChange("verifyOtp");
+            }}
           />
         );
 
       case "verifyOtp":
         return (
           <VerifyOtpForm
+            email={recoveryEmail}
             onBackToSignIn={() => onModeChange("signIn")}
             onVerified={() => onModeChange("resetPassword")}
           />

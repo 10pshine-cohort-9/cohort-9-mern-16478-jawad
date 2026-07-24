@@ -1,5 +1,7 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail } from "lucide-react";
-import type { FormEvent } from "react";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 
 import {
   AuthField,
@@ -7,6 +9,12 @@ import {
 } from "@/features/auth/components/AuthField";
 import { PasswordInput } from "@/features/auth/components/PasswordInput";
 import { SocialLoginButtons } from "@/features/auth/components/SocialLoginButtons";
+import {
+  loginSchema,
+  type LoginFormValues,
+} from "@/features/auth/schemas/auth.schemas";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { getApiErrorMessage } from "@/features/auth/utils/get-api-error-message";
 
 interface SignInFormProps {
   onShowForgotPassword: () => void;
@@ -17,10 +25,40 @@ export const SignInForm = ({
   onShowForgotPassword,
   onShowSignUp,
 }: SignInFormProps) => {
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-    // Login API integration next phase mein hogi.
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+
+    defaultValues: {
+      identifier: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (values: LoginFormValues) => {
+    try {
+      await login({
+        identifier: values.identifier.trim().toLowerCase(),
+
+        password: values.password,
+      });
+
+      navigate("/dashboard", {
+        replace: true,
+      });
+    } catch (error) {
+      setError("root.server", {
+        type: "server",
+        message: getApiErrorMessage(error),
+      });
+    }
   };
 
   return (
@@ -35,8 +73,17 @@ export const SignInForm = ({
         </p>
       </header>
 
-      <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-        <AuthField htmlFor="loginEmail" label="Email Address" required>
+      <form
+        className="mt-5 space-y-4"
+        noValidate
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <AuthField
+          error={errors.identifier?.message}
+          htmlFor="loginIdentifier"
+          label="Email or Username"
+          required
+        >
           <div className="relative">
             <Mail
               aria-hidden="true"
@@ -45,24 +92,24 @@ export const SignInForm = ({
             />
 
             <input
-              autoComplete="email"
+              {...register("identifier")}
+              aria-invalid={Boolean(errors.identifier)}
+              autoComplete="username"
               className={`${authInputClassName} h-11 pl-11`}
-              id="loginEmail"
-              name="email"
-              placeholder="Enter your email"
-              required
-              type="email"
+              id="loginIdentifier"
+              placeholder="Enter email or username"
+              type="text"
             />
           </div>
         </AuthField>
 
         <PasswordInput
+          {...register("password")}
           autoComplete="current-password"
           className="h-11"
+          error={errors.password?.message}
           id="loginPassword"
           label="Password"
-          minLength={8}
-          name="password"
           placeholder="Enter your password"
           required
         />
@@ -98,11 +145,21 @@ export const SignInForm = ({
           </button>
         </div>
 
+        {errors.root?.server?.message && (
+          <div
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+            role="alert"
+          >
+            {errors.root.server.message}
+          </div>
+        )}
+
         <button
-          className="flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-violet-600/20 transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200"
+          className="flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-violet-600/20 transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200 disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isSubmitting}
           type="submit"
         >
-          Sign In
+          {isSubmitting ? "Signing In..." : "Sign In"}
         </button>
 
         <div className="flex items-center gap-4">
