@@ -7,6 +7,7 @@ import {
   getNotesForUser,
   updateNoteForUser,
   deleteNoteForUser,
+  toggleFavoriteForUser
 } from "./note.service.js";
 
 export const createNote: RequestHandler = async (request, response, next) => {
@@ -169,6 +170,49 @@ export const deleteNote: RequestHandler = async (request, response, next) => {
       message: "Note deleted successfully",
       data: {
         noteId,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const toggleFavorite: RequestHandler = async (
+  request,
+  response,
+  next,
+) => {
+  try {
+    const userId = request.auth?.userId;
+
+    if (!userId) {
+      throw new AppError("Authentication is required", 401, {
+        code: "AUTHENTICATION_REQUIRED",
+      });
+    }
+
+    const noteId = request.params.noteId;
+
+    if (
+      typeof noteId !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        noteId,
+      )
+    ) {
+      throw new AppError("Note ID must be a valid UUID", 400, {
+        code: "INVALID_NOTE_ID",
+      });
+    }
+
+    const note = await toggleFavoriteForUser(userId, noteId);
+
+    response.status(200).json({
+      success: true,
+      message: note.isFavorite
+        ? "Note added to favorites"
+        : "Note removed from favorites",
+      data: {
+        note,
       },
     });
   } catch (error) {

@@ -251,3 +251,52 @@ export const deleteNoteForUser = async (
     });
   }
 };
+
+export const toggleFavoriteForUser = async (userId: string, noteId: string) => {
+  try {
+    const existingNote = await noteRepository.findByIdAndUserId(noteId, userId);
+
+    if (!existingNote) {
+      throw new AppError("Note not found", 404, {
+        code: "NOTE_NOT_FOUND",
+      });
+    }
+
+    const note = await noteRepository.toggleFavorite(userId, noteId);
+
+    if (!note) {
+      throw new AppError("Note not found", 404, {
+        code: "NOTE_NOT_FOUND",
+      });
+    }
+
+    logger.info(
+      {
+        userId,
+        noteId,
+        isFavorite: note.isFavorite,
+      },
+      `Note ${note.isFavorite ? "added to" : "removed from"} favorites`,
+    );
+
+    return note;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    logger.error(
+      {
+        err: error,
+        userId,
+        noteId,
+      },
+      "Failed to toggle note favorite",
+    );
+
+    throw new AppError("Note favorite could not be toggled", 500, {
+      code: "NOTE_FAVORITE_TOGGLE_FAILED",
+      cause: error,
+    });
+  }
+};

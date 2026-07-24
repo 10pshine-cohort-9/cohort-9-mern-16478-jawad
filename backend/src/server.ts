@@ -87,6 +87,40 @@ const startServer = async (): Promise<void> => {
   }
 };
 
+// const shutdown = async (signal: string): Promise<void> => {
+//   if (isShuttingDown) {
+//     return;
+//   }
+
+//   isShuttingDown = true;
+
+//   logger.info(
+//     {
+//       signal,
+//     },
+//     "Application shutdown started",
+//   );
+
+//   try {
+//     await closeHttpServer();
+//     await prisma.$disconnect();
+
+//     logger.info("Application shutdown completed");
+
+//     process.exitCode = 0;
+//   } catch (error) {
+//     logger.error(
+//       {
+//         err: error,
+//       },
+//       "Application shutdown failed",
+//     );
+
+//     process.exitCode = 1;
+//   }
+// };
+
+// ✅ shutdown FUNCTION MEIN CHANGE KARO
 const shutdown = async (signal: string): Promise<void> => {
   if (isShuttingDown) {
     return;
@@ -101,23 +135,43 @@ const shutdown = async (signal: string): Promise<void> => {
     "Application shutdown started",
   );
 
+  let exitCode = 0;
+
+  // ✅ HTTP server close - ALWAYS try
   try {
     await closeHttpServer();
-    await prisma.$disconnect();
-
-    logger.info("Application shutdown completed");
-
-    process.exitCode = 0;
   } catch (error) {
     logger.error(
       {
         err: error,
       },
-      "Application shutdown failed",
+      "HTTP server close failed",
     );
-
-    process.exitCode = 1;
+    exitCode = 1;
   }
+
+  // ✅ Database disconnect - ALWAYS try (even if HTTP close failed)
+  try {
+    await prisma.$disconnect();
+    logger.info("PostgreSQL disconnected successfully");
+  } catch (error) {
+    logger.error(
+      {
+        err: error,
+      },
+      "Failed to disconnect from PostgreSQL",
+    );
+    exitCode = 1;
+  }
+
+  if (exitCode === 0) {
+    logger.info("Application shutdown completed");
+  } else {
+    logger.error("Application shutdown completed with errors");
+  }
+
+  process.exitCode = exitCode;
+  process.exit(exitCode);
 };
 
 process.once("SIGINT", () => {

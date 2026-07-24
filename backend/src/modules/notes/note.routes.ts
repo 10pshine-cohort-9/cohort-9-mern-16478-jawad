@@ -7,6 +7,7 @@ import {
   getNotes,
   updateNote,
   deleteNote,
+  toggleFavorite, 
 } from "./note.controller.js";
 import { createNoteSchema, updateNoteSchema } from "./note.schema.js";
 
@@ -26,3 +27,5 @@ noteRouter.patch(
 );
 
 noteRouter.delete("/:noteId", authenticate, deleteNote);
+
+noteRouter.patch("/:noteId/favorite", authenticate, toggleFavorite);

@@ -63,10 +63,6 @@ export const deleteProfileImage = async (publicId: string): Promise<void> => {
       invalidate: true,
     });
 
-    /*
-     * Cloudinary ka "not found" result idempotent success hai:
-     * image pehle delete ho chuki ho to dobara failure nahi dena.
-     */
     if (result.result !== "ok" && result.result !== "not found") {
       throw new AppError(
         `Unexpected Cloudinary deletion result: ${result.result}`,

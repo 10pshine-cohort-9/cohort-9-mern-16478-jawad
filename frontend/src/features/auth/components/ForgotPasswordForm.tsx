@@ -1,28 +1,66 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Info, Mail } from "lucide-react";
-import type { FormEvent } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 import {
   AuthField,
   authInputClassName,
 } from "@/features/auth/components/AuthField";
+import {
+  forgotPasswordSchema,
+  type ForgotPasswordFormValues,
+} from "@/features/auth/schemas/auth.schemas";
+import { requestPasswordReset } from "@/features/auth/services/auth.api";
+import { getApiErrorMessage } from "@/features/auth/utils/get-api-error-message";
 
 interface ForgotPasswordFormProps {
   onBackToSignIn: () => void;
-  onCodeSent: () => void;
+  onCodeSent: (email: string) => void;
 }
 
 export const ForgotPasswordForm = ({
   onBackToSignIn,
   onCodeSent,
 }: ForgotPasswordFormProps) => {
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const [successMessage, setSuccessMessage] = useState<string>();
 
-    /*
-     * API integration mein onCodeSent()
-     * successful response ke baad call hoga.
-     */
-    onCodeSent();
+  const {
+    register,
+    handleSubmit,
+    setError,
+    clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  const onSubmit = async (values: ForgotPasswordFormValues) => {
+    clearErrors();
+    setSuccessMessage(undefined);
+
+    const normalizedEmail = values.email.trim().toLowerCase();
+
+    try {
+      const response = await requestPasswordReset({
+        email: normalizedEmail,
+      });
+
+      setSuccessMessage(response.message);
+
+      window.setTimeout(() => {
+        onCodeSent(normalizedEmail);
+      }, 700);
+    } catch (error) {
+      setError("root.server", {
+        type: "server",
+        message: getApiErrorMessage(error),
+      });
+    }
   };
 
   return (
@@ -38,8 +76,17 @@ export const ForgotPasswordForm = ({
         </p>
       </header>
 
-      <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-        <AuthField htmlFor="forgotPasswordEmail" label="Email Address" required>
+      <form
+        className="mt-6 space-y-5"
+        noValidate
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <AuthField
+          error={errors.email?.message}
+          htmlFor="forgotPasswordEmail"
+          label="Email Address"
+          required
+        >
           <div className="relative">
             <Mail
               aria-hidden="true"
@@ -48,12 +95,12 @@ export const ForgotPasswordForm = ({
             />
 
             <input
+              {...register("email")}
+              aria-invalid={Boolean(errors.email)}
               autoComplete="email"
               className={`${authInputClassName} h-11 pl-11`}
               id="forgotPasswordEmail"
-              name="email"
               placeholder="Enter your email"
-              required
               type="email"
             />
           </div>
@@ -70,27 +117,44 @@ export const ForgotPasswordForm = ({
           </p>
         </div>
 
+        {errors.root?.server?.message && (
+          <div
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+            role="alert"
+          >
+            {errors.root.server.message}
+          </div>
+        )}
+
+        {successMessage && (
+          <div
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+            role="status"
+          >
+            {successMessage}
+          </div>
+        )}
+
         <button
-          className="flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-violet-600/20 transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200"
+          className="flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 text-sm font-semibold text-white shadow-lg shadow-violet-600/20 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isSubmitting || Boolean(successMessage)}
           type="submit"
         >
-          Send Reset Code
+          {isSubmitting ? "Sending Code..." : "Send Reset Code"}
         </button>
 
         <div className="flex items-center gap-4">
           <span className="h-px flex-1 bg-slate-200" />
-
           <span className="text-xs text-slate-400">or</span>
-
           <span className="h-px flex-1 bg-slate-200" />
         </div>
 
         <button
-          className="mx-auto flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-violet-600 transition hover:text-violet-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+          className="mx-auto flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-violet-600 hover:text-violet-800"
           onClick={onBackToSignIn}
           type="button"
         >
-          <ArrowLeft aria-hidden="true" size={17} />
+          <ArrowLeft size={17} />
           Back to Sign In
         </button>
       </form>

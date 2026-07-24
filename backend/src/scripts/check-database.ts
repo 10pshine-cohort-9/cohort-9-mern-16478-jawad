@@ -1,3 +1,4 @@
+// ✅ YEH PURA SCRIPT CHANGE KARO
 import { logger } from "../lib/logger.js";
 import { prisma } from "../lib/prisma.js";
 
@@ -55,4 +56,13 @@ const checkDatabaseConnection = async (): Promise<void> => {
   }
 };
 
-await checkDatabaseConnection();
+(async () => {
+  try {
+    await checkDatabaseConnection();
+    process.exit(0);
+  } catch (error) {
+    logger.fatal({ err: error }, "Database check script failed");
+    process.exitCode = 1;
+    process.exit(1);
+  }
+})();
