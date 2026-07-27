@@ -55,7 +55,7 @@ export const MobileSidebar = ({ isOpen, onClose }: MobileSidebarProps) => {
 
       <div
         className={cn(
-          "relative h-full w-72 max-w-[85vw] transition-transform duration-300",
+          "relative h-full w-60 max-w-[82vw] transition-transform duration-300",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -65,7 +65,7 @@ export const MobileSidebar = ({ isOpen, onClose }: MobileSidebarProps) => {
           onClick={onClose}
           type="button"
         >
-          <X size={19} />
+          <X size={18} />
         </button>
 
         <AppSidebar onNavigate={onClose} />
