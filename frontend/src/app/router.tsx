@@ -17,6 +17,9 @@ import NoteEditorPage from "@/features/notes/pages/NoteEditorPage";
 import DeletedNotesPage from "@/features/notes/pages/DeletedNotesPage";
 import FavoriteNotesPage from "@/features/notes/pages/FavoriteNotesPage";
 
+import ProfilePage from "@/features/profile/pages/ProfilePage";
+import { ProfileLayout } from "@/layouts/ProfileLayout";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -78,7 +81,16 @@ export const router = createBrowserRouter([
           {
             path: "/notes/trash",
             element: <DeletedNotesPage />,
-          },  
+          },
+        ],
+      },
+      {
+        element: <ProfileLayout />,
+        children: [
+          {
+            path: "/profile",
+            element: <ProfilePage />,
+          },
         ],
       },
     ],
