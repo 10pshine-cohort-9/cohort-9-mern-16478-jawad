@@ -48,3 +48,6 @@ temp/
 # Runtime uploads
 uploads/
 backend/uploads/
+
+# Prisma generated client
+backend/src/generated/prisma/
