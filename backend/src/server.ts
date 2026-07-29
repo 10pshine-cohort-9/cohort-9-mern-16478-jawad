@@ -81,9 +81,21 @@ const shutdown = (signal: string): void => {
 
     if (exitCode === 0) {
       logger.info("Server shutdown completed successfully");
+    } else {
+      logger.error(
+        {
+          exitCode,
+        },
+        "Server shutdown completed with errors",
+      );
     }
 
-    process.exit(exitCode);
+    /*
+     * Direct process.exit() avoid karte hain.
+     * Natural shutdown Pino transport ko pending
+     * logs complete karne ka time deti hai.
+     */
+    process.exitCode = exitCode;
   });
 };
 
