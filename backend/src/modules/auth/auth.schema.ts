@@ -45,6 +45,10 @@ const citySchema = z
   .max(100, "City cannot exceed 100 characters")
   .regex(/^[\p{L}\p{M}\s.'-]+$/u, "City contains invalid characters");
 
+const hasValidBcryptByteLength = (value: string): boolean => {
+  return Buffer.byteLength(value, "utf8") <= 72;
+};
+
 const passwordSchema = z
   .string()
   .min(8, "Password must contain at least 8 characters")
@@ -87,7 +91,10 @@ export const loginSchema = z
     password: z
       .string()
       .min(1, "Password is required")
-      .max(72, "Password cannot exceed 72 characters"),
+      .max(72, "Password cannot exceed 72 characters")
+      .refine(hasValidBcryptByteLength, {
+        message: "Password cannot exceed 72 UTF-8 bytes",
+      }),
   })
   .strict();
 

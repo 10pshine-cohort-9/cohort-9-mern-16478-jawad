@@ -254,29 +254,29 @@ export const requestPasswordReset = async (
     expiresAt,
   );
 
-  try {
-    await sendPasswordResetOtpEmail({
-      email: user.email,
-      fullName: user.fullName,
-      otp,
-      expiresInMinutes: env.PASSWORD_RESET_OTP_TTL_MINUTES,
+  void sendPasswordResetOtpEmail({
+    email: user.email,
+    fullName: user.fullName,
+    otp,
+    expiresInMinutes: env.PASSWORD_RESET_OTP_TTL_MINUTES,
+  })
+    .then(() => {
+      logger.info(
+        {
+          userId: user.id,
+        },
+        "Password reset OTP email sent",
+      );
+    })
+    .catch((error: unknown) => {
+      logger.error(
+        {
+          err: error,
+          userId: user.id,
+        },
+        "Password reset OTP email could not be delivered",
+      );
     });
-
-    logger.info(
-      {
-        userId: user.id,
-      },
-      "Password reset OTP email sent",
-    );
-  } catch (error) {
-    logger.error(
-      {
-        err: error,
-        userId: user.id,
-      },
-      "Password reset OTP email could not be delivered",
-    );
-  }
 };
 
 export const verifyPasswordResetOtp = async (
@@ -290,17 +290,26 @@ export const verifyPasswordResetOtp = async (
 
   const challenge = await authRepository.findPasswordResetByUserId(user.id);
 
-  const now = new Date();
+  if (!challenge) {
+    throw createInvalidOtpError();
+  }
 
-  if (
-    !challenge ||
-    challenge.expiresAt <= now ||
-    challenge.verifiedAt !== null ||
-    challenge.attempts >= env.PASSWORD_RESET_MAX_ATTEMPTS
-  ) {
-    if (challenge) {
-      await authRepository.deletePasswordResetById(challenge.id);
-    }
+  /*
+   * An already verified reset session must not be deleted.
+   * A repeated request is rejected, but the valid reset
+   * session remains available for reset-password.
+   */
+  if (challenge.verifiedAt !== null) {
+    throw createInvalidOtpError();
+  }
+
+  const isExpired = challenge.expiresAt <= new Date();
+
+  const hasReachedAttemptLimit =
+    challenge.attempts >= env.PASSWORD_RESET_MAX_ATTEMPTS;
+
+  if (isExpired || hasReachedAttemptLimit) {
+    await authRepository.deletePasswordResetById(challenge.id);
 
     throw createInvalidOtpError();
   }
@@ -308,11 +317,10 @@ export const verifyPasswordResetOtp = async (
   const otpMatches = verifyPasswordResetOtpHash(input.otp, challenge.otpHash);
 
   if (!otpMatches) {
-    const nextAttemptCount = challenge.attempts + 1;
+    const updatedChallenge =
+      await authRepository.incrementPasswordResetAttempts(challenge.id);
 
-    await authRepository.incrementPasswordResetAttempts(challenge.id);
-
-    if (nextAttemptCount >= env.PASSWORD_RESET_MAX_ATTEMPTS) {
+    if (updatedChallenge.attempts >= env.PASSWORD_RESET_MAX_ATTEMPTS) {
       await authRepository.deletePasswordResetById(challenge.id);
     }
 

@@ -1,7 +1,6 @@
 import type { RequestHandler } from "express";
 
 import { AppError } from "../../common/errors/app-error.js";
-
 import {
   clearAuthCookie,
   clearPasswordResetCookie,
@@ -9,7 +8,6 @@ import {
   setAuthCookie,
   setPasswordResetCookie,
 } from "../../common/utils/auth-cookie.js";
-
 import type {
   ForgotPasswordInput,
   LoginInput,
@@ -17,7 +15,6 @@ import type {
   ResetPasswordInput,
   VerifyResetOtpInput,
 } from "./auth.schema.js";
-
 import {
   getCurrentUser,
   loginUser,
@@ -27,7 +24,17 @@ import {
   verifyPasswordResetOtp,
 } from "./auth.service.js";
 
-export const register: RequestHandler = async (request, response, next) => {
+type AuthBodyRequestHandler<TBody> = RequestHandler<
+  Record<string, never>,
+  unknown,
+  TBody
+>;
+
+export const register: AuthBodyRequestHandler<RegisterInput> = async (
+  request,
+  response,
+  next,
+) => {
   try {
     if (!request.file) {
       throw new AppError("Profile image is required", 400, {
@@ -35,10 +42,7 @@ export const register: RequestHandler = async (request, response, next) => {
       });
     }
 
-    const user = await registerUser(
-      request.body as RegisterInput,
-      request.file,
-    );
+    const user = await registerUser(request.body, request.file);
 
     response.status(201).json({
       success: true,
@@ -52,9 +56,13 @@ export const register: RequestHandler = async (request, response, next) => {
   }
 };
 
-export const login: RequestHandler = async (request, response, next) => {
+export const login: AuthBodyRequestHandler<LoginInput> = async (
+  request,
+  response,
+  next,
+) => {
   try {
-    const result = await loginUser(request.body as LoginInput);
+    const result = await loginUser(request.body);
 
     setAuthCookie(response, result.accessToken);
 
@@ -74,13 +82,11 @@ export const login: RequestHandler = async (request, response, next) => {
   }
 };
 
-export const forgotPassword: RequestHandler = async (
-  request,
-  response,
-  next,
-) => {
+export const forgotPassword: AuthBodyRequestHandler<
+  ForgotPasswordInput
+> = async (request, response, next) => {
   try {
-    await requestPasswordReset(request.body as ForgotPasswordInput);
+    await requestPasswordReset(request.body);
 
     response.status(200).json({
       success: true,
@@ -92,15 +98,11 @@ export const forgotPassword: RequestHandler = async (
   }
 };
 
-export const verifyResetOtp: RequestHandler = async (
-  request,
-  response,
-  next,
-) => {
+export const verifyResetOtp: AuthBodyRequestHandler<
+  VerifyResetOtpInput
+> = async (request, response, next) => {
   try {
-    const resetToken = await verifyPasswordResetOtp(
-      request.body as VerifyResetOtpInput,
-    );
+    const resetToken = await verifyPasswordResetOtp(request.body);
 
     setPasswordResetCookie(response, resetToken);
 
@@ -115,7 +117,7 @@ export const verifyResetOtp: RequestHandler = async (
   }
 };
 
-export const resetPassword: RequestHandler = async (
+export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
   request,
   response,
   next,
@@ -133,7 +135,7 @@ export const resetPassword: RequestHandler = async (
       );
     }
 
-    await resetUserPassword(request.body as ResetPasswordInput, resetToken);
+    await resetUserPassword(request.body, resetToken);
 
     clearPasswordResetCookie(response);
 
@@ -145,7 +147,20 @@ export const resetPassword: RequestHandler = async (
         "Password reset successfully. You can now log in with your new password.",
     });
   } catch (error) {
-    clearPasswordResetCookie(response);
+    /*
+     * Sirf invalid ya expired reset session
+     * par reset cookie clear hogi.
+     *
+     * Temporary server error ya recoverable
+     * validation error par valid session
+     * preserve rahegi.
+     */
+    if (
+      error instanceof AppError &&
+      error.code === "INVALID_OR_EXPIRED_RESET_SESSION"
+    ) {
+      clearPasswordResetCookie(response);
+    }
 
     next(error);
   }
@@ -153,6 +168,7 @@ export const resetPassword: RequestHandler = async (
 
 export const logout: RequestHandler = (_request, response) => {
   clearAuthCookie(response);
+
   clearPasswordResetCookie(response);
 
   response.setHeader("Cache-Control", "no-store");
