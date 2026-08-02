@@ -178,37 +178,48 @@ export const registerUser = async (
 };
 
 export const loginUser = async (input: LoginInput): Promise<LoginResult> => {
-  const account = await authRepository.findUserForLogin(input.identifier);
+  try {
+    const account = await authRepository.findUserForLogin(input.identifier);
 
-  if (!account) {
-    throw createInvalidCredentialsError();
+    if (!account) {
+      throw createInvalidCredentialsError();
+    }
+
+    const passwordMatches = await verifyPassword(
+      input.password,
+      account.passwordHash,
+    );
+
+    if (!passwordMatches) {
+      throw createInvalidCredentialsError();
+    }
+
+    const user = mapLoginUserToPublicUser(account);
+
+    const accessToken = createAccessToken(user.id);
+
+    logger.info(
+      {
+        userId: user.id,
+        username: user.username,
+      },
+      "User logged in successfully",
+    );
+
+    return {
+      user,
+      accessToken,
+    };
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError("Login could not be completed", 500, {
+      code: "LOGIN_FAILED",
+      cause: error,
+    });
   }
-
-  const passwordMatches = await verifyPassword(
-    input.password,
-    account.passwordHash,
-  );
-
-  if (!passwordMatches) {
-    throw createInvalidCredentialsError();
-  }
-
-  const user = mapLoginUserToPublicUser(account);
-
-  const accessToken = createAccessToken(user.id);
-
-  logger.info(
-    {
-      userId: user.id,
-      username: user.username,
-    },
-    "User logged in successfully",
-  );
-
-  return {
-    user,
-    accessToken,
-  };
 };
 
 const createInvalidOtpError = (): AppError => {
@@ -282,73 +293,88 @@ export const requestPasswordReset = async (
 export const verifyPasswordResetOtp = async (
   input: VerifyResetOtpInput,
 ): Promise<string> => {
-  const user = await authRepository.findUserForPasswordReset(input.email);
+  try {
+    const user = await authRepository.findUserForPasswordReset(input.email);
 
-  if (!user) {
-    throw createInvalidOtpError();
-  }
-
-  const challenge = await authRepository.findPasswordResetByUserId(user.id);
-
-  if (!challenge) {
-    throw createInvalidOtpError();
-  }
-
-  /*
-   * An already verified reset session must not be deleted.
-   * A repeated request is rejected, but the valid reset
-   * session remains available for reset-password.
-   */
-  if (challenge.verifiedAt !== null) {
-    throw createInvalidOtpError();
-  }
-
-  const isExpired = challenge.expiresAt <= new Date();
-
-  const hasReachedAttemptLimit =
-    challenge.attempts >= env.PASSWORD_RESET_MAX_ATTEMPTS;
-
-  if (isExpired || hasReachedAttemptLimit) {
-    await authRepository.deletePasswordResetById(challenge.id);
-
-    throw createInvalidOtpError();
-  }
-
-  const otpMatches = verifyPasswordResetOtpHash(input.otp, challenge.otpHash);
-
-  if (!otpMatches) {
-    const updatedChallenge =
-      await authRepository.incrementPasswordResetAttempts(challenge.id);
-
-    if (updatedChallenge.attempts >= env.PASSWORD_RESET_MAX_ATTEMPTS) {
-      await authRepository.deletePasswordResetById(challenge.id);
+    if (!user) {
+      throw createInvalidOtpError();
     }
 
-    throw createInvalidOtpError();
+    const challenge = await authRepository.findPasswordResetByUserId(user.id);
+
+    if (!challenge) {
+      throw createInvalidOtpError();
+    }
+
+    /*
+     * An already verified reset session must not be deleted.
+     * A repeated request is rejected, but the valid reset
+     * session remains available for reset-password.
+     */
+    if (challenge.verifiedAt !== null) {
+      throw createInvalidOtpError();
+    }
+
+    const isExpired = challenge.expiresAt <= new Date();
+
+    const hasReachedAttemptLimit =
+      challenge.attempts >= env.PASSWORD_RESET_MAX_ATTEMPTS;
+
+    if (isExpired || hasReachedAttemptLimit) {
+      await authRepository.deletePasswordResetById(challenge.id);
+
+      throw createInvalidOtpError();
+    }
+
+    const otpMatches = verifyPasswordResetOtpHash(input.otp, challenge.otpHash);
+
+    if (!otpMatches) {
+      const updatedChallenge =
+        await authRepository.incrementPasswordResetAttempts(challenge.id);
+
+      if (updatedChallenge.attempts >= env.PASSWORD_RESET_MAX_ATTEMPTS) {
+        await authRepository.deletePasswordResetById(challenge.id);
+      }
+
+      throw createInvalidOtpError();
+    }
+
+    const resetToken = generatePasswordResetToken();
+
+    const resetTokenHash = hashPasswordResetToken(resetToken);
+
+    const resetTokenExpiresAt = new Date(
+      Date.now() + env.PASSWORD_RESET_TOKEN_TTL_MINUTES * 60 * 1000,
+    );
+
+    await authRepository.markPasswordResetVerified(
+      challenge.id,
+      resetTokenHash,
+      resetTokenExpiresAt,
+    );
+
+    logger.info(
+      {
+        userId: user.id,
+      },
+      "Password reset OTP verified",
+    );
+
+    return resetToken;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(
+      "Password reset verification could not be completed",
+      500,
+      {
+        code: "PASSWORD_RESET_OTP_VERIFICATION_FAILED",
+        cause: error,
+      },
+    );
   }
-
-  const resetToken = generatePasswordResetToken();
-
-  const resetTokenHash = hashPasswordResetToken(resetToken);
-
-  const resetTokenExpiresAt = new Date(
-    Date.now() + env.PASSWORD_RESET_TOKEN_TTL_MINUTES * 60 * 1000,
-  );
-
-  await authRepository.markPasswordResetVerified(
-    challenge.id,
-    resetTokenHash,
-    resetTokenExpiresAt,
-  );
-
-  logger.info(
-    {
-      userId: user.id,
-    },
-    "Password reset OTP verified",
-  );
-
-  return resetToken;
 };
 
 export const resetUserPassword = async (
@@ -414,13 +440,24 @@ export const resetUserPassword = async (
 };
 
 export const getCurrentUser = async (userId: string): Promise<PublicUser> => {
-  const user = await authRepository.findPublicUserById(userId);
+  try {
+    const user = await authRepository.findPublicUserById(userId);
 
-  if (!user) {
-    throw new AppError("Authenticated user no longer exists", 401, {
-      code: "AUTHENTICATED_USER_NOT_FOUND",
+    if (!user) {
+      throw new AppError("Authenticated user no longer exists", 401, {
+        code: "AUTHENTICATED_USER_NOT_FOUND",
+      });
+    }
+
+    return user;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError("Current user could not be retrieved", 500, {
+      code: "CURRENT_USER_LOOKUP_FAILED",
+      cause: error,
     });
   }
-
-  return user;
 };
