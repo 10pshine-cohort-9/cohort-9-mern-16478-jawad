@@ -42,13 +42,9 @@ export const noteRepository = {
     });
   },
 
-  findAllByUserId(
-    userId: string,
-    page: number = 1,
-    limit: number = 20
-  ) {
+  findAllByUserId(userId: string, page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
-    
+
     return prisma.note.findMany({
       where: { userId },
       skip,
@@ -118,23 +114,14 @@ export const noteRepository = {
     return prisma.$transaction(async (transaction) => {
       try {
         const currentNote = await transaction.note.findFirst({
-          where: {
-            id: noteId,
-            userId,
-          },
-          select: {
-            isFavorite: true,
-          },
+          where: { id: noteId, userId },
+          select: { isFavorite: true },
         });
 
-        if (!currentNote) {
-          return null;
-        }
+        if (!currentNote) return null;
 
         const updatedNote = await transaction.note.update({
-          where: {
-            id: noteId,
-          },
+          where: { id: noteId },
           data: {
             isFavorite: !currentNote.isFavorite,
           },

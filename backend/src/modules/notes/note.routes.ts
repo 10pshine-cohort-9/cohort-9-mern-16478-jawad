@@ -7,7 +7,7 @@ import {
   getNotes,
   updateNote,
   deleteNote,
-  toggleFavorite, 
+  toggleFavorite,
 } from "./note.controller.js";
 import { createNoteSchema, updateNoteSchema } from "./note.schema.js";
 
@@ -19,13 +19,13 @@ noteRouter.get("/:noteId", authenticate, getNoteById);
 
 noteRouter.post("/", authenticate, validateBody(createNoteSchema), createNote);
 
-noteRouter.patch(
+noteRouter.put(
   "/:noteId",
   authenticate,
   validateBody(updateNoteSchema),
   updateNote,
 );
 
-noteRouter.delete("/:noteId", authenticate, deleteNote);
-
 noteRouter.patch("/:noteId/favorite", authenticate, toggleFavorite);
+
+noteRouter.delete("/:noteId", authenticate, deleteNote);
