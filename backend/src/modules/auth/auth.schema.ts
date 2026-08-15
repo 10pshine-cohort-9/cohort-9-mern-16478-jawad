@@ -45,13 +45,10 @@ const citySchema = z
   .max(100, "City cannot exceed 100 characters")
   .regex(/^[\p{L}\p{M}\s.'-]+$/u, "City contains invalid characters");
 
-<<<<<<< HEAD
 const hasValidBcryptByteLength = (value: string): boolean => {
   return Buffer.byteLength(value, "utf8") <= 72;
 };
 
-=======
->>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 const passwordSchema = z
   .string()
   .min(8, "Password must contain at least 8 characters")
@@ -59,14 +56,10 @@ const passwordSchema = z
   .regex(/[a-z]/, "Password must contain a lowercase letter")
   .regex(/[A-Z]/, "Password must contain an uppercase letter")
   .regex(/\d/, "Password must contain a number")
-<<<<<<< HEAD
   .regex(/[^A-Za-z0-9]/, "Password must contain a special character")
   .refine(hasValidBcryptByteLength, {
     message: "Password cannot exceed 72 UTF-8 bytes",
   });
-=======
-  .regex(/[^A-Za-z0-9]/, "Password must contain a special character");
->>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
 
 export const registerSchema = z
   .object({
@@ -75,9 +68,7 @@ export const registerSchema = z
     email: emailSchema,
     phoneNumber: phoneNumberSchema,
     city: citySchema,
-
     gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]),
-
     password: passwordSchema,
     confirmPassword: z.string(),
   })
@@ -97,18 +88,13 @@ export const loginSchema = z
       .toLowerCase()
       .min(3, "Email or username must contain at least 3 characters")
       .max(255, "Email or username is too long"),
-
     password: z
       .string()
       .min(1, "Password is required")
-<<<<<<< HEAD
       .max(72, "Password cannot exceed 72 characters")
       .refine(hasValidBcryptByteLength, {
         message: "Password cannot exceed 72 UTF-8 bytes",
       }),
-=======
-      .max(72, "Password cannot exceed 72 characters"),
->>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
   })
   .strict();
 
@@ -125,7 +111,6 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export const verifyResetOtpSchema = z
   .object({
     email: emailSchema,
-
     otp: z
       .string()
       .trim()
