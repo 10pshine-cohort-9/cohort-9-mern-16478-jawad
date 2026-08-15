@@ -49,10 +49,7 @@ model Note {
   @@index([userId, updatedAt])
   @@map("notes")
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
+
 
 model PasswordReset {
   id                  String    @id @default(uuid()) @db.Uuid
@@ -71,8 +68,4 @@ model PasswordReset {
   @@index([expiresAt])
   @@map("password_resets")
 }
-<<<<<<< HEAD
-=======
->>>>>>> 7f9783d (feat(backend): configure PostgreSQL and Prisma data layer)
-=======
->>>>>>> 7ea15c4 (feat(backend): implement complete authentication API)
+
