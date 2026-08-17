@@ -2,8 +2,6 @@ import { AppError } from "../errors/app-error.js";
 import { cloudinary } from "../../lib/cloudinary.js";
 import type { UploadedProfileImage } from "../../modules/auth/auth.types.js";
 
-const CLOUDINARY_UPLOAD_TIMEOUT_MS = 15_000;
-
 export const uploadProfileImage = async (
   file: Express.Multer.File,
 ): Promise<UploadedProfileImage> => {
@@ -14,8 +12,6 @@ export const uploadProfileImage = async (
         resource_type: "image",
         unique_filename: true,
         overwrite: false,
-        timeout: CLOUDINARY_UPLOAD_TIMEOUT_MS,
-
         transformation: [
           {
             width: 512,
@@ -32,12 +28,11 @@ export const uploadProfileImage = async (
       (error, result) => {
         if (error) {
           reject(
-            new AppError("Profile image upload failed", 502, {
-              code: "PROFILE_IMAGE_UPLOAD_FAILED",
+            new AppError("Failed to upload profile image", 500, {
+              code: "CLOUDINARY_UPLOAD_FAILED",
               cause: error,
             }),
           );
-
           return;
         }
 
@@ -47,7 +42,6 @@ export const uploadProfileImage = async (
               code: "PROFILE_IMAGE_UPLOAD_FAILED",
             }),
           );
-
           return;
         }
 
@@ -69,9 +63,9 @@ export const deleteProfileImage = async (publicId: string): Promise<void> => {
       invalidate: true,
     });
 
-    if (result.result !== "ok") {
+    if (result.result !== "ok" && result.result !== "not found") {
       throw new AppError(
-        `Cloudinary could not delete profile image: ${result.result}`,
+        `Unexpected Cloudinary deletion result: ${result.result}`,
         502,
         {
           code: "PROFILE_IMAGE_DELETE_FAILED",

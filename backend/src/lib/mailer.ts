@@ -15,12 +15,10 @@ const createMailer = (): Transporter | null => {
     host: env.SMTP_HOST,
     port: env.SMTP_PORT,
     secure: env.SMTP_SECURE,
-
     auth: {
       user: env.SMTP_USER,
       pass: env.SMTP_PASS,
     },
-
     connectionTimeout: SMTP_CONNECTION_TIMEOUT_MS,
     greetingTimeout: SMTP_GREETING_TIMEOUT_MS,
     socketTimeout: SMTP_SOCKET_TIMEOUT_MS,

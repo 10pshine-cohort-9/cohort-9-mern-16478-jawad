@@ -2,27 +2,39 @@ import "dotenv/config";
 
 import { z } from "zod";
 
-const isValidHttpOrigin = (value: string): boolean => {
-  try {
-    const url = new URL(value);
-
-    return (
-      (url.protocol === "http:" || url.protocol === "https:") &&
-      url.username === "" &&
-      url.password === "" &&
-      url.pathname === "/" &&
-      url.search === "" &&
-      url.hash === ""
-    );
-  } catch {
-    return false;
-  }
-};
-
 const booleanStringSchema = z
   .enum(["true", "false"])
   .default("false")
   .transform((value) => value === "true");
+
+const postgresUrlSchema = z
+  .string()
+  .url("DATABASE_URL must be a valid URL")
+  .refine(
+    (value) => {
+      const protocol = new URL(value).protocol;
+
+      return protocol === "postgresql:" || protocol === "postgres:";
+    },
+    {
+      message:
+        "DATABASE_URL must use the postgresql:// or postgres:// protocol",
+    },
+  );
+
+const isValidHttpOrigin = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return false;
+    }
+
+    return url.pathname === "/" && url.search === "" && url.hash === "";
+  } catch {
+    return false;
+  }
+};
 
 const envSchema = z.object({
   NODE_ENV: z
@@ -36,7 +48,7 @@ const envSchema = z.object({
       "CLIENT_URL must be a valid HTTP or HTTPS origin without a path, query, hash, or credentials",
   }),
 
-  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  DATABASE_URL: postgresUrlSchema,
 
   JWT_SECRET: z
     .string()
@@ -45,8 +57,8 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z
     .string()
     .regex(
-      /^\d+(s|m|h|d)$/,
-      "JWT_EXPIRES_IN must use a value such as 30m, 1h or 7d",
+      /^[1-9]\d*(s|m|h|d)$/,
+      "JWT_EXPIRES_IN must be a positive duration such as 30m, 1h or 7d",
     )
     .default("7d"),
 
@@ -122,7 +134,6 @@ const result = envSchema.safeParse(process.env);
 
 if (!result.success) {
   console.error("Invalid environment variables:");
-
   console.error(
     result.error.issues.map((issue) => ({
       field: issue.path.join("."),

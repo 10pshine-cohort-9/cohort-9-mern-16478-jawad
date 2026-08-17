@@ -1,5 +1,4 @@
 import bcrypt from "bcrypt";
-
 import { AppError } from "../errors/app-error.js";
 import { env } from "../../config/env.js";
 

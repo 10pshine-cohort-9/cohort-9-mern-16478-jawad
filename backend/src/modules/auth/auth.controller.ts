@@ -67,7 +67,6 @@ export const login: AuthBodyRequestHandler<LoginInput> = async (
     setAuthCookie(response, result.accessToken);
 
     response.setHeader("Cache-Control", "no-store");
-
     response.setHeader("Pragma", "no-cache");
 
     response.status(200).json({
@@ -140,6 +139,7 @@ export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
     clearPasswordResetCookie(response);
 
     response.setHeader("Cache-Control", "no-store");
+    response.setHeader("Pragma", "no-cache");
 
     response.status(200).json({
       success: true,
@@ -168,11 +168,9 @@ export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
 
 export const logout: RequestHandler = (_request, response) => {
   clearAuthCookie(response);
-
   clearPasswordResetCookie(response);
 
   response.setHeader("Cache-Control", "no-store");
-
   response.setHeader("Pragma", "no-cache");
 
   response.status(200).json({
@@ -194,7 +192,6 @@ export const getMe: RequestHandler = async (request, response, next) => {
     const user = await getCurrentUser(userId);
 
     response.setHeader("Cache-Control", "no-store");
-
     response.setHeader("Pragma", "no-cache");
 
     response.status(200).json({

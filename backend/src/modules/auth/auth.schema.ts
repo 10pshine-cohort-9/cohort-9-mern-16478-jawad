@@ -68,9 +68,7 @@ export const registerSchema = z
     email: emailSchema,
     phoneNumber: phoneNumberSchema,
     city: citySchema,
-
     gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]),
-
     password: passwordSchema,
     confirmPassword: z.string(),
   })
@@ -90,7 +88,6 @@ export const loginSchema = z
       .toLowerCase()
       .min(3, "Email or username must contain at least 3 characters")
       .max(255, "Email or username is too long"),
-
     password: z
       .string()
       .min(1, "Password is required")
@@ -114,7 +111,6 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export const verifyResetOtpSchema = z
   .object({
     email: emailSchema,
-
     otp: z
       .string()
       .trim()

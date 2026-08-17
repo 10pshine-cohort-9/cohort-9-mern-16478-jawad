@@ -1,3 +1,4 @@
+// ✅ YEH PURA SCRIPT CHANGE KARO
 import { logger } from "../lib/logger.js";
 import { prisma } from "../lib/prisma.js";
 
@@ -10,11 +11,11 @@ interface DatabaseInformation {
 const checkDatabaseConnection = async (): Promise<void> => {
   try {
     const result = await prisma.$queryRaw<DatabaseInformation[]>`
-          SELECT
-            current_database() AS database_name,
-            current_user AS database_user,
-            version() AS database_version
-        `;
+      SELECT
+        current_database() AS database_name,
+        current_user AS database_user,
+        version() AS database_version
+    `;
 
     const databaseInformation = result[0];
 
@@ -42,14 +43,12 @@ const checkDatabaseConnection = async (): Promise<void> => {
   } finally {
     try {
       await prisma.$disconnect();
-
-      logger.info("PostgreSQL connection closed successfully");
     } catch (disconnectError) {
       logger.error(
         {
           err: disconnectError,
         },
-        "PostgreSQL cleanup failed",
+        "Failed to disconnect from PostgreSQL",
       );
 
       process.exitCode = 1;
@@ -57,4 +56,13 @@ const checkDatabaseConnection = async (): Promise<void> => {
   }
 };
 
-await checkDatabaseConnection();
+(async () => {
+  try {
+    await checkDatabaseConnection();
+    process.exit(0);
+  } catch (error) {
+    logger.fatal({ err: error }, "Database check script failed");
+    process.exitCode = 1;
+    process.exit(1);
+  }
+})();
