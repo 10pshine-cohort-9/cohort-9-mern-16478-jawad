@@ -1,25 +1,23 @@
 import { createBrowserRouter, Navigate } from "react-router";
+
 import { NotFoundPage } from "@/components/shared/NotFoundPage";
+import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 import ForgotPasswordPage from "@/features/auth/pages/ForgotPasswordPage";
 import LoginPage from "@/features/auth/pages/LoginPage";
 import ResetPasswordPage from "@/features/auth/pages/ResetPasswordPage";
 import SignupPage from "@/features/auth/pages/SignupPage";
 import VerifyOtpPage from "@/features/auth/pages/VerifyOtpPage";
-import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 import { AppLayout } from "@/layouts/AppLayout";
-
-import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
-import { PublicOnlyRoute } from "@/features/auth/components/PublicOnlyRoute";
-
+import { AuthLayout } from "@/layouts/AuthLayout";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate replace to="/login" />,
+    element: <Navigate to="/login" replace />,
   },
 
   {
-    element: <PublicOnlyRoute />,
+    element: <AuthLayout />,
     children: [
       {
         path: "/login",
@@ -45,22 +43,11 @@ export const router = createBrowserRouter([
   },
 
   {
-    element: <ProtectedRoute />,
+    element: <AppLayout />,
     children: [
       {
-        element: <AppLayout />,
-        children: [
-          {
-            path: "/dashboard",
-            element: <DashboardPage />,
-          },
-
-          /*
-           * Notes routes bhi isi
-           * AppLayout children mein
-           * protected rahengi.
-           */
-        ],
+        path: "/dashboard",
+        element: <DashboardPage />,
       },
     ],
   },
