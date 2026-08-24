@@ -45,10 +45,6 @@ const citySchema = z
   .max(100, "City cannot exceed 100 characters")
   .regex(/^[\p{L}\p{M}\s.'-]+$/u, "City contains invalid characters");
 
-const hasValidBcryptByteLength = (value: string): boolean => {
-  return Buffer.byteLength(value, "utf8") <= 72;
-};
-
 const passwordSchema = z
   .string()
   .min(8, "Password must contain at least 8 characters")
@@ -56,10 +52,7 @@ const passwordSchema = z
   .regex(/[a-z]/, "Password must contain a lowercase letter")
   .regex(/[A-Z]/, "Password must contain an uppercase letter")
   .regex(/\d/, "Password must contain a number")
-  .regex(/[^A-Za-z0-9]/, "Password must contain a special character")
-  .refine(hasValidBcryptByteLength, {
-    message: "Password cannot exceed 72 UTF-8 bytes",
-  });
+  .regex(/[^A-Za-z0-9]/, "Password must contain a special character");
 
 export const registerSchema = z
   .object({
@@ -68,7 +61,9 @@ export const registerSchema = z
     email: emailSchema,
     phoneNumber: phoneNumberSchema,
     city: citySchema,
+
     gender: z.enum(["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]),
+
     password: passwordSchema,
     confirmPassword: z.string(),
   })
@@ -88,13 +83,11 @@ export const loginSchema = z
       .toLowerCase()
       .min(3, "Email or username must contain at least 3 characters")
       .max(255, "Email or username is too long"),
+
     password: z
       .string()
       .min(1, "Password is required")
-      .max(72, "Password cannot exceed 72 characters")
-      .refine(hasValidBcryptByteLength, {
-        message: "Password cannot exceed 72 UTF-8 bytes",
-      }),
+      .max(72, "Password cannot exceed 72 characters"),
   })
   .strict();
 

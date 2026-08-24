@@ -61,18 +61,13 @@ const envSchema = z.object({
       "JWT_EXPIRES_IN must be a positive duration such as 30m, 1h or 7d",
     )
     .default("7d"),
-
   JWT_ISSUER: z.string().default("notes-app-api"),
 
   JWT_AUDIENCE: z.string().default("notes-app-client"),
 
   COOKIE_NAME: z.string().default("notes_access_token"),
 
-  AUTH_COOKIE_MAX_AGE_MS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(604_800_000),
+  AUTH_COOKIE_MAX_AGE_MS: z.coerce.number().int().positive().default(604800000),
 
   LOG_LEVEL: z.string().default("info"),
 
@@ -80,26 +75,19 @@ const envSchema = z.object({
 
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
 
-  CLOUDINARY_CLOUD_NAME: z.string().min(1, "CLOUDINARY_CLOUD_NAME is required"),
-
-  CLOUDINARY_API_KEY: z.string().min(1, "CLOUDINARY_API_KEY is required"),
-
-  CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET is required"),
+  CLOUDINARY_CLOUD_NAME: z.string().min(1),
+  CLOUDINARY_API_KEY: z.string().min(1),
+  CLOUDINARY_API_SECRET: z.string().min(1),
 
   MAIL_ENABLED: booleanStringSchema,
 
   SMTP_HOST: z.string().optional(),
-
-  SMTP_PORT: z.coerce.number().int().min(1).max(65_535).default(587),
-
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_SECURE: booleanStringSchema,
-
   SMTP_USER: z.string().optional(),
-
   SMTP_PASS: z.string().optional(),
 
   MAIL_FROM_NAME: z.string().default("Notes App"),
-
   MAIL_FROM_EMAIL: z.string().email().optional(),
 
   PASSWORD_RESET_SECRET: z

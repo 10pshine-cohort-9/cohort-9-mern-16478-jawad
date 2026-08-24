@@ -24,17 +24,7 @@ import {
   verifyPasswordResetOtp,
 } from "./auth.service.js";
 
-type AuthBodyRequestHandler<TBody> = RequestHandler<
-  Record<string, never>,
-  unknown,
-  TBody
->;
-
-export const register: AuthBodyRequestHandler<RegisterInput> = async (
-  request,
-  response,
-  next,
-) => {
+export const register: RequestHandler = async (request, response, next) => {
   try {
     if (!request.file) {
       throw new AppError("Profile image is required", 400, {
@@ -42,7 +32,10 @@ export const register: AuthBodyRequestHandler<RegisterInput> = async (
       });
     }
 
-    const user = await registerUser(request.body, request.file);
+    const user = await registerUser(
+      request.body as RegisterInput,
+      request.file,
+    );
 
     response.status(201).json({
       success: true,
@@ -56,13 +49,9 @@ export const register: AuthBodyRequestHandler<RegisterInput> = async (
   }
 };
 
-export const login: AuthBodyRequestHandler<LoginInput> = async (
-  request,
-  response,
-  next,
-) => {
+export const login: RequestHandler = async (request, response, next) => {
   try {
-    const result = await loginUser(request.body);
+    const result = await loginUser(request.body as LoginInput);
 
     setAuthCookie(response, result.accessToken);
 
@@ -81,11 +70,13 @@ export const login: AuthBodyRequestHandler<LoginInput> = async (
   }
 };
 
-export const forgotPassword: AuthBodyRequestHandler<
-  ForgotPasswordInput
-> = async (request, response, next) => {
+export const forgotPassword: RequestHandler = async (
+  request,
+  response,
+  next,
+) => {
   try {
-    await requestPasswordReset(request.body);
+    await requestPasswordReset(request.body as ForgotPasswordInput);
 
     response.status(200).json({
       success: true,
@@ -97,11 +88,15 @@ export const forgotPassword: AuthBodyRequestHandler<
   }
 };
 
-export const verifyResetOtp: AuthBodyRequestHandler<
-  VerifyResetOtpInput
-> = async (request, response, next) => {
+export const verifyResetOtp: RequestHandler = async (
+  request,
+  response,
+  next,
+) => {
   try {
-    const resetToken = await verifyPasswordResetOtp(request.body);
+    const resetToken = await verifyPasswordResetOtp(
+      request.body as VerifyResetOtpInput,
+    );
 
     setPasswordResetCookie(response, resetToken);
 
@@ -116,14 +111,14 @@ export const verifyResetOtp: AuthBodyRequestHandler<
   }
 };
 
-export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
+export const resetPassword: RequestHandler = async (
   request,
   response,
   next,
 ) => {
   try {
     const resetToken = getPasswordResetCookie(request);
-
+ 
     if (!resetToken) {
       throw new AppError(
         "The password reset session is invalid or has expired",
@@ -134,7 +129,7 @@ export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
       );
     }
 
-    await resetUserPassword(request.body, resetToken);
+    await resetUserPassword(request.body as ResetPasswordInput, resetToken);
 
     clearPasswordResetCookie(response);
 
@@ -148,12 +143,9 @@ export const resetPassword: AuthBodyRequestHandler<ResetPasswordInput> = async (
     });
   } catch (error) {
     /*
-     * Sirf invalid ya expired reset session
-     * par reset cookie clear hogi.
-     *
-     * Temporary server error ya recoverable
-     * validation error par valid session
-     * preserve rahegi.
+     * Invalid or expired reset sessions must be removed.
+     * Recoverable validation errors keep the cookie so
+     * the user can correct the password and retry.
      */
     if (
       error instanceof AppError &&
