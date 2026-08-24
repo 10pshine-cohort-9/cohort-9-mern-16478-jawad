@@ -1,26 +1,14 @@
-import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Clock3 } from "lucide-react";
 import {
   useEffect,
   useRef,
   useState,
   type ClipboardEvent,
+  type FormEvent,
   type KeyboardEvent,
 } from "react";
-import { useForm } from "react-hook-form";
-
-import {
-  verifyResetOtpSchema,
-  type VerifyResetOtpFormValues,
-} from "@/features/auth/schemas/auth.schemas";
-import {
-  requestPasswordReset,
-  verifyResetOtp as verifyResetOtpRequest,
-} from "@/features/auth/services/auth.api";
-import { getApiErrorMessage } from "@/features/auth/utils/get-api-error-message";
 
 interface VerifyOtpFormProps {
-  email: string;
   onBackToSignIn: () => void;
   onVerified: () => void;
 }
@@ -28,16 +16,16 @@ interface VerifyOtpFormProps {
 const OTP_LENGTH = 6;
 const INITIAL_SECONDS = 165;
 
-const createEmptyCode = () =>
-  Array.from(
+const createEmptyCode = (): string[] => {
+  return Array.from(
     {
       length: OTP_LENGTH,
     },
     () => "",
   );
+};
 
 export const VerifyOtpForm = ({
-  email,
   onBackToSignIn,
   onVerified,
 }: VerifyOtpFormProps) => {
@@ -45,44 +33,19 @@ export const VerifyOtpForm = ({
 
   const [remainingSeconds, setRemainingSeconds] = useState(INITIAL_SECONDS);
 
-  const [isResending, setIsResending] = useState(false);
-
-  const [successMessage, setSuccessMessage] = useState<string>();
-
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<VerifyResetOtpFormValues>({
-    resolver: zodResolver(verifyResetOtpSchema),
-
-    defaultValues: {
-      email,
-      otp: "",
-    },
-  });
-
-  useEffect(() => {
-    setValue("email", email, {
-      shouldValidate: true,
-    });
-  }, [email, setValue]);
 
   useEffect(() => {
     if (remainingSeconds <= 0) {
       return;
     }
 
-    const timerId = window.setTimeout(() => {
+    const timerId = window.setInterval(() => {
       setRemainingSeconds((current) => Math.max(current - 1, 0));
     }, 1_000);
 
     return () => {
-      window.clearTimeout(timerId);
+      window.clearInterval(timerId);
     };
   }, [remainingSeconds]);
 
@@ -96,23 +59,16 @@ export const VerifyOtpForm = ({
     seconds,
   ).padStart(2, "0")}`;
 
-  const commitCode = (nextCode: string[]) => {
-    setCode(nextCode);
-
-    setValue("otp", nextCode.join(""), {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  };
-
   const updateDigit = (index: number, value: string) => {
     const digit = value.replace(/\D/g, "").slice(-1);
 
-    const nextCode = [...code];
+    setCode((currentCode) => {
+      const nextCode = [...currentCode];
 
-    nextCode[index] = digit;
+      nextCode[index] = digit;
 
-    commitCode(nextCode);
+      return nextCode;
+    });
 
     if (digit && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
@@ -126,11 +82,13 @@ export const VerifyOtpForm = ({
     if (event.key === "Backspace" && !code[index] && index > 0) {
       event.preventDefault();
 
-      const nextCode = [...code];
+      setCode((currentCode) => {
+        const nextCode = [...currentCode];
 
-      nextCode[index - 1] = "";
+        nextCode[index - 1] = "";
 
-      commitCode(nextCode);
+        return nextCode;
+      });
 
       inputRefs.current[index - 1]?.focus();
     }
@@ -162,68 +120,36 @@ export const VerifyOtpForm = ({
       nextCode[index] = digit;
     });
 
-    commitCode(nextCode);
+    setCode(nextCode);
 
-    inputRefs.current[Math.min(pastedDigits.length, OTP_LENGTH - 1)]?.focus();
+    const focusIndex = Math.min(pastedDigits.length, OTP_LENGTH - 1);
+
+    inputRefs.current[focusIndex]?.focus();
   };
 
-  const handleResendCode = async () => {
-    if (!email) {
-      setError("root.server", {
-        type: "server",
-        message:
-          "Recovery email is missing. Start the password reset process again.",
-      });
+  const handleResendCode = () => {
+    setCode(createEmptyCode());
+    setRemainingSeconds(INITIAL_SECONDS);
+
+    inputRefs.current[0]?.focus();
+
+    // Resend OTP API integration later phase mein hogi.
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (otpValue.length !== OTP_LENGTH) {
+      inputRefs.current[code.findIndex((digit) => !digit)]?.focus();
 
       return;
     }
 
-    setIsResending(true);
-    setSuccessMessage(undefined);
-
-    try {
-      const response = await requestPasswordReset({
-        email,
-      });
-
-      commitCode(createEmptyCode());
-
-      setRemainingSeconds(INITIAL_SECONDS);
-
-      setSuccessMessage(response.message);
-
-      inputRefs.current[0]?.focus();
-    } catch (error) {
-      setError("root.server", {
-        type: "server",
-        message: getApiErrorMessage(error),
-      });
-    } finally {
-      setIsResending(false);
-    }
-  };
-
-  const onSubmit = async (values: VerifyResetOtpFormValues) => {
-    setSuccessMessage(undefined);
-
-    try {
-      const response = await verifyResetOtpRequest({
-        email: values.email.trim().toLowerCase(),
-
-        otp: values.otp,
-      });
-
-      setSuccessMessage(response.message);
-
-      window.setTimeout(() => {
-        onVerified();
-      }, 700);
-    } catch (error) {
-      setError("root.server", {
-        type: "server",
-        message: getApiErrorMessage(error),
-      });
-    }
+    /*
+     * Verify OTP API successful hone ke baad
+     * onVerified() call hoga.
+     */
+    onVerified();
   };
 
   return (
@@ -237,111 +163,88 @@ export const VerifyOtpForm = ({
           We sent a 6-digit code to
         </p>
 
-        <p className="break-all text-sm font-semibold text-violet-600">
-          {email || "your registered email"}
+        <p className="text-sm font-semibold text-violet-600">
+          alexjohnson@email.com
         </p>
       </header>
 
-      <form
-        className="mt-7 space-y-6"
-        noValidate
-        onSubmit={handleSubmit(onSubmit)}
-      >
-        <input {...register("email")} type="hidden" />
+      <form className="mt-7 space-y-6" onSubmit={handleSubmit}>
+        <fieldset>
+          <legend className="sr-only">
+            Enter the six-digit verification code
+          </legend>
 
-        <input {...register("otp")} type="hidden" />
-
-        <div className="grid grid-cols-6 gap-2.5 sm:gap-3">
-          {code.map((digit, index) => (
-            <input
-              aria-label={`Verification code digit ${index + 1}`}
-              aria-invalid={Boolean(errors.otp)}
-              autoComplete={index === 0 ? "one-time-code" : "off"}
-              autoFocus={index === 0}
-              className="h-14 min-w-0 rounded-xl border border-slate-200 bg-white text-center text-xl font-semibold text-[#17143d] outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100 sm:h-16 sm:text-2xl"
-              inputMode="numeric"
-              key={index}
-              maxLength={1}
-              onChange={(event) => updateDigit(index, event.target.value)}
-              onKeyDown={(event) => handleKeyDown(event, index)}
-              onPaste={handlePaste}
-              ref={(element) => {
-                inputRefs.current[index] = element;
-              }}
-              type="text"
-              value={digit}
-            />
-          ))}
-        </div>
-
-        {errors.otp?.message && (
-          <p className="text-sm font-medium text-red-600" role="alert">
-            {errors.otp.message}
-          </p>
-        )}
+          <div className="grid grid-cols-6 gap-2.5 sm:gap-3">
+            {code.map((digit, index) => (
+              <input
+                aria-label={`Verification code digit ${index + 1}`}
+                autoComplete={index === 0 ? "one-time-code" : "off"}
+                autoFocus={index === 0}
+                className="h-14 min-w-0 rounded-xl border border-slate-200 bg-white text-center text-xl font-semibold text-[#17143d] outline-none transition hover:border-slate-300 focus:border-violet-500 focus:ring-4 focus:ring-violet-100 sm:h-16 sm:text-2xl"
+                id={`otp-digit-${index}`}
+                inputMode="numeric"
+                key={index}
+                maxLength={1}
+                name={`otpDigit${index + 1}`}
+                onChange={(event) => updateDigit(index, event.target.value)}
+                onKeyDown={(event) => handleKeyDown(event, index)}
+                onPaste={handlePaste}
+                pattern="[0-9]*"
+                ref={(element) => {
+                  inputRefs.current[index] = element;
+                }}
+                type="text"
+                value={digit}
+              />
+            ))}
+          </div>
+        </fieldset>
 
         <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
-          <span className="flex items-center gap-2 text-slate-500">
-            <Clock3 size={18} />
-            Code expires in{" "}
-            <strong className="text-violet-600">{formattedTime}</strong>
-          </span>
+          <div className="flex items-center gap-2 text-slate-500">
+            <Clock3 aria-hidden="true" size={18} />
+
+            <span>
+              Code expires in{" "}
+              <strong className="font-semibold text-violet-600">
+                {formattedTime}
+              </strong>
+            </span>
+          </div>
 
           <button
-            className="font-semibold text-violet-600 hover:text-violet-800 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={isResending || !email}
+            className="font-semibold text-violet-600 transition hover:text-violet-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
             onClick={handleResendCode}
             type="button"
           >
-            {isResending ? "Sending..." : "Resend code"}
+            Resend code
           </button>
         </div>
 
-        {errors.root?.server?.message && (
-          <div
-            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
-            role="alert"
-          >
-            {errors.root.server.message}
-          </div>
-        )}
-
-        {successMessage && (
-          <div
-            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
-            role="status"
-          >
-            {successMessage}
-          </div>
-        )}
-
         <button
-          className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 text-base font-semibold text-white shadow-lg shadow-violet-600/20 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={
-            isSubmitting ||
-            otpValue.length !== OTP_LENGTH ||
-            !email ||
-            Boolean(successMessage)
-          }
+          className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 text-base font-semibold text-white shadow-lg shadow-violet-600/20 transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={otpValue.length !== OTP_LENGTH}
           type="submit"
         >
-          {isSubmitting ? "Verifying..." : "Verify"}
+          Verify
         </button>
 
         <div className="flex items-center gap-4">
           <span className="h-px flex-1 bg-slate-200" />
 
-          <span className="text-sm text-slate-500">or go back</span>
+          <span className="whitespace-nowrap text-sm text-slate-500">
+            or go back
+          </span>
 
           <span className="h-px flex-1 bg-slate-200" />
         </div>
 
         <button
-          className="mx-auto flex items-center gap-2 text-sm font-semibold text-violet-600 hover:text-violet-800"
+          className="mx-auto flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-violet-600 transition hover:text-violet-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
           onClick={onBackToSignIn}
           type="button"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft aria-hidden="true" size={18} />
           Back to Sign In
         </button>
       </form>

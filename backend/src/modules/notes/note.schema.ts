@@ -55,3 +55,29 @@ export const updateNoteSchema = z
   });
 
 export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
+
+// ============================================
+// Favorite Status Update Schema
+// ============================================
+export const updateNoteFavoriteStatusSchema = z
+  .object({
+    isFavorite: z.boolean(),
+  })
+  .strict();
+
+export type UpdateNoteFavoriteStatusInput = z.infer<
+  typeof updateNoteFavoriteStatusSchema
+>;
+
+// ============================================
+// Pinned Status Update Schema
+// ============================================
+export const updateNotePinnedStatusSchema = z
+  .object({
+    isPinned: z.boolean(),
+  })
+  .strict();
+
+export type UpdateNotePinnedStatusInput = z.infer<
+  typeof updateNotePinnedStatusSchema
+>;

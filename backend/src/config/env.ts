@@ -22,14 +22,31 @@ const postgresUrlSchema = z
     },
   );
 
+const isValidHttpOrigin = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return false;
+    }
+
+    return url.pathname === "/" && url.search === "" && url.hash === "";
+  } catch {
+    return false;
+  }
+};
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
 
-  PORT: z.coerce.number().int().positive().default(5000),
+  PORT: z.coerce.number().int().min(1).max(65_535).default(5000),
 
-  CLIENT_URL: z.string().url(),
+  CLIENT_URL: z.string().url().refine(isValidHttpOrigin, {
+    message:
+      "CLIENT_URL must be a valid HTTP or HTTPS origin without a path, query, hash, or credentials",
+  }),
 
   DATABASE_URL: postgresUrlSchema,
 

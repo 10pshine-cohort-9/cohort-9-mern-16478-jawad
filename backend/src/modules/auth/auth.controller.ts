@@ -1,7 +1,6 @@
 import type { RequestHandler } from "express";
 
 import { AppError } from "../../common/errors/app-error.js";
-
 import {
   clearAuthCookie,
   clearPasswordResetCookie,
@@ -9,7 +8,6 @@ import {
   setAuthCookie,
   setPasswordResetCookie,
 } from "../../common/utils/auth-cookie.js";
-
 import type {
   ForgotPasswordInput,
   LoginInput,
@@ -17,7 +15,6 @@ import type {
   ResetPasswordInput,
   VerifyResetOtpInput,
 } from "./auth.schema.js";
-
 import {
   getCurrentUser,
   loginUser,
@@ -59,7 +56,6 @@ export const login: RequestHandler = async (request, response, next) => {
     setAuthCookie(response, result.accessToken);
 
     response.setHeader("Cache-Control", "no-store");
-
     response.setHeader("Pragma", "no-cache");
 
     response.status(200).json({
@@ -167,7 +163,6 @@ export const logout: RequestHandler = (_request, response) => {
   clearPasswordResetCookie(response);
 
   response.setHeader("Cache-Control", "no-store");
-
   response.setHeader("Pragma", "no-cache");
 
   response.status(200).json({
@@ -189,7 +184,6 @@ export const getMe: RequestHandler = async (request, response, next) => {
     const user = await getCurrentUser(userId);
 
     response.setHeader("Cache-Control", "no-store");
-
     response.setHeader("Pragma", "no-cache");
 
     response.status(200).json({

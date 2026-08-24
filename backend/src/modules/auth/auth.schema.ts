@@ -104,7 +104,6 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export const verifyResetOtpSchema = z
   .object({
     email: emailSchema,
-
     otp: z
       .string()
       .trim()
