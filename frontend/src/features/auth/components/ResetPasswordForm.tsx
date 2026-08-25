@@ -1,7 +1,15 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Circle } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { PasswordInput } from "@/features/auth/components/PasswordInput";
+import {
+  resetPasswordSchema,
+  type ResetPasswordFormValues,
+} from "@/features/auth/schemas/auth.schemas";
+import { resetUserPassword } from "@/features/auth/services/auth.api";
+import { getApiErrorMessage } from "@/features/auth/utils/get-api-error-message";
 import { cn } from "@/lib/cn";
 
 interface ResetPasswordFormProps {
@@ -9,22 +17,32 @@ interface ResetPasswordFormProps {
   onPasswordReset: () => void;
 }
 
-interface PasswordRequirement {
-  label: string;
-  passed: boolean;
-}
-
 export const ResetPasswordForm = ({
   onBackToSignIn,
   onPasswordReset,
 }: ResetPasswordFormProps) => {
-  const [password, setPassword] = useState("");
+  const [successMessage, setSuccessMessage] = useState<string>();
 
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
 
-  const [submitError, setSubmitError] = useState<string>();
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
-  const requirements = useMemo<PasswordRequirement[]>(
+  const password = watch("password");
+
+  const confirmPassword = watch("confirmPassword");
+
+  const requirements = useMemo(
     () => [
       {
         label: "At least 8 characters",
@@ -52,7 +70,7 @@ export const ResetPasswordForm = ({
 
   const passwordsMatch = password.length > 0 && password === confirmPassword;
 
-  const isFormValid =
+  const isFormReady =
     completedRequirements === requirements.length && passwordsMatch;
 
   const strengthLabel = (() => {
@@ -71,40 +89,27 @@ export const ResetPasswordForm = ({
     return "Strong";
   })();
 
-  const strengthTextClassName =
-    completedRequirements === 4
-      ? "text-emerald-600"
-      : completedRequirements === 3
-        ? "text-violet-600"
-        : completedRequirements === 2
-          ? "text-amber-600"
-          : "text-red-500";
+  const onSubmit = async (values: ResetPasswordFormValues) => {
+    setSuccessMessage(undefined);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    try {
+      const response = await resetUserPassword({
+        password: values.password,
 
-    if (completedRequirements !== requirements.length) {
-      setSubmitError("Please meet all password requirements.");
+        confirmPassword: values.confirmPassword,
+      });
 
-      return;
+      setSuccessMessage(response.message);
+
+      window.setTimeout(() => {
+        onPasswordReset();
+      }, 900);
+    } catch (error) {
+      setError("root.server", {
+        type: "server",
+        message: getApiErrorMessage(error),
+      });
     }
-
-    if (!passwordsMatch) {
-      setSubmitError("Passwords do not match.");
-
-      return;
-    }
-
-    setSubmitError(undefined);
-
-    /*
-     * Auth integration phase mein:
-     * await resetPasswordApi(...)
-     *
-     * Successful response ke baad hi
-     * onPasswordReset() call hoga.
-     */
-    onPasswordReset();
   };
 
   return (
@@ -119,62 +124,50 @@ export const ResetPasswordForm = ({
         </p>
       </header>
 
-      <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+      <form
+        className="mt-6 space-y-5"
+        noValidate
+        onSubmit={handleSubmit(onSubmit)}
+      >
         <PasswordInput
+          {...register("password")}
           autoComplete="new-password"
           className="h-12"
+          error={errors.password?.message}
           id="newPassword"
           label="New Password"
-          minLength={8}
-          name="password"
-          onChange={(event) => {
-            setPassword(event.target.value);
-
-            if (submitError) {
-              setSubmitError(undefined);
-            }
-          }}
           placeholder="Enter your new password"
           required
-          value={password}
         />
 
         <PasswordInput
+          {...register("confirmPassword")}
           autoComplete="new-password"
           className="h-12"
-          error={
-            confirmPassword && !passwordsMatch
-              ? "Passwords do not match."
-              : undefined
-          }
+          error={errors.confirmPassword?.message}
           id="confirmNewPassword"
           label="Confirm Password"
-          minLength={8}
-          name="confirmPassword"
-          onChange={(event) => {
-            setConfirmPassword(event.target.value);
-
-            if (submitError) {
-              setSubmitError(undefined);
-            }
-          }}
           placeholder="Confirm your new password"
           required
-          value={confirmPassword}
         />
 
-        {/* Password strength card */}
         <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
           <p className="text-sm font-semibold text-[#17143d]">
             Password strength:{" "}
-            <span className={strengthTextClassName}>{strengthLabel}</span>
+            <span
+              className={
+                completedRequirements === 4
+                  ? "text-emerald-600"
+                  : "text-violet-600"
+              }
+            >
+              {strengthLabel}
+            </span>
           </p>
 
-          {/* Strength bars */}
           <div className="mt-3 grid grid-cols-4 gap-1.5">
-            {requirements.map(({ passed, label }) => (
+            {requirements.map(({ label, passed }) => (
               <span
-                aria-label={label}
                 className={cn(
                   "h-1.5 rounded-full transition",
                   passed
@@ -186,52 +179,51 @@ export const ResetPasswordForm = ({
             ))}
           </div>
 
-          {/* Requirements */}
           <div className="mt-4 space-y-2.5">
             {requirements.map(({ label, passed }) => (
               <div className="flex items-center gap-3 text-sm" key={label}>
                 {passed ? (
-                  <CheckCircle2
-                    aria-hidden="true"
-                    className="shrink-0 text-violet-600"
-                    size={18}
-                  />
+                  <CheckCircle2 className="text-violet-600" size={18} />
                 ) : (
-                  <Circle
-                    aria-hidden="true"
-                    className="shrink-0 text-slate-300"
-                    size={18}
-                  />
+                  <Circle className="text-slate-300" size={18} />
                 )}
 
-                <span
-                  className={cn(passed ? "text-slate-700" : "text-slate-500")}
-                >
-                  {label}
-                </span>
+                <span className="text-slate-600">{label}</span>
               </div>
             ))}
           </div>
         </section>
 
-        {submitError && (
-          <p className="text-sm font-medium text-red-600" role="alert">
-            {submitError}
-          </p>
+        {errors.root?.server?.message && (
+          <div
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+            role="alert"
+          >
+            {errors.root.server.message}
+          </div>
+        )}
+
+        {successMessage && (
+          <div
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+            role="status"
+          >
+            {successMessage}
+          </div>
         )}
 
         <button
-          className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 text-base font-semibold text-white shadow-lg shadow-violet-600/20 transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-200 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={!isFormValid}
+          className="flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-6 text-base font-semibold text-white shadow-lg shadow-violet-600/20 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!isFormReady || isSubmitting || Boolean(successMessage)}
           type="submit"
         >
-          Reset Password
+          {isSubmitting ? "Resetting Password..." : "Reset Password"}
         </button>
 
         <p className="text-center text-sm text-slate-500">
           Remember your password?{" "}
           <button
-            className="font-semibold text-violet-600 transition hover:text-violet-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100"
+            className="font-semibold text-violet-600 hover:text-violet-800"
             onClick={onBackToSignIn}
             type="button"
           >
