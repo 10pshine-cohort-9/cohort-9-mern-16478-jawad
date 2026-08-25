@@ -11,6 +11,8 @@ import { AppLayout } from "@/layouts/AppLayout";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { PublicOnlyRoute } from "@/features/auth/components/PublicOnlyRoute";
 
+import AllNotesPage from "@/features/notes/pages/AllNotesPage";
+import NoteEditorPage from "@/features/notes/pages/NoteEditorPage";
 
 export const router = createBrowserRouter([
   {
@@ -55,11 +57,18 @@ export const router = createBrowserRouter([
             element: <DashboardPage />,
           },
 
-          /*
-           * Notes routes bhi isi
-           * AppLayout children mein
-           * protected rahengi.
-           */
+          {
+            path: "/notes",
+            element: <AllNotesPage />,
+          },
+          {
+            path: "/notes/new",
+            element: <NoteEditorPage />,
+          },
+          {
+            path: "/notes/:noteId/edit",
+            element: <NoteEditorPage />,
+          },
         ],
       },
     ],
