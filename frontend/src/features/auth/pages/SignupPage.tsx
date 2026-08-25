@@ -1,14 +1,7 @@
-import { AuthPlaceholderPage } from "@/features/auth/components/AuthPlaceholderPage";
+import { AuthPage } from "@/features/auth/pages/AuthPage";
 
 const SignupPage = () => {
-  return (
-    <AuthPlaceholderPage
-      title="Create your account"
-      description="Create a secure workspace and start organizing your notes."
-      linkLabel="Already registered? Sign in"
-      linkTo="/login"
-    />
-  );
+  return <AuthPage initialMode="signUp" />;
 };
 
 export default SignupPage;
