@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useEffect,
   useMemo,
@@ -18,16 +17,7 @@ import type {
   PublicUser,
 } from "@/features/auth/types/auth.types";
 
-interface AuthContextValue {
-  isAuthenticated: boolean;
-  isInitializing: boolean;
-  login: (input: LoginRequest) => Promise<AuthUserResponse>;
-  logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-  user: PublicUser | null;
-}
-
-export const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext, type AuthContextValue } from "./auth-context";
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [user, setUser] = useState<PublicUser | null>(null);
@@ -41,8 +31,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       setUser(response.data.user);
     } catch {
       /*
-       * /auth/me par 401 ka matlab user
-       * logged in nahi hai.
+       * /auth/me par 401 ka matlab
+       * authenticated session available
+       * nahi hai.
        */
       setUser(null);
     } finally {

@@ -17,8 +17,8 @@ export const AppLayout = () => {
   }, []);
 
   return (
-    <div className="min-h-[100dvh] bg-slate-50 text-slate-950 transition-colors dark:bg-[#10101c] dark:text-white">
-      <div className="fixed inset-y-0 left-0 z-40 hidden w-72 lg:block">
+    <div className="min-h-[100dvh] bg-[#f7f8fc] text-slate-950 transition-colors duration-300 dark:bg-[#07101f] dark:text-white">
+      <div className="fixed inset-y-0 left-0 z-40 hidden w-60 lg:block">
         <AppSidebar />
       </div>
 
@@ -27,10 +27,10 @@ export const AppLayout = () => {
         onClose={closeMobileSidebar}
       />
 
-      <div className="min-h-[100dvh] lg:pl-72">
+      <div className="min-h-[100dvh] lg:pl-60">
         <AppTopbar onOpenMobileSidebar={openMobileSidebar} />
 
-        <main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="mx-auto w-full max-w-[1700px] px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
           <Outlet />
         </main>
       </div>
