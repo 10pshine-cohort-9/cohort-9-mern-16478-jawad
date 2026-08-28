@@ -12,15 +12,15 @@ const getInitialTheme = (): Theme => {
     return savedTheme;
   }
 
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return "light";
 };
 
 const applyTheme = (theme: Theme): void => {
-  document.documentElement.classList.toggle("dark", theme === "dark");
+  const rootElement = document.documentElement;
 
-  document.documentElement.style.colorScheme = theme;
+  rootElement.classList.toggle("dark", theme === "dark");
+
+  rootElement.style.colorScheme = theme;
 };
 
 export const ThemeToggle = () => {
@@ -34,26 +34,22 @@ export const ThemeToggle = () => {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme(isDarkMode ? "light" : "dark");
-  };
-
-  const accessibleLabel = isDarkMode
-    ? "Switch to light mode"
-    : "Switch to dark mode";
+  const label = isDarkMode ? "Switch to light mode" : "Switch to dark mode";
 
   return (
     <button
-      aria-label={accessibleLabel}
-      className="flex size-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:ring-violet-500/20"
-      onClick={toggleTheme}
-      title={accessibleLabel}
+      aria-label={label}
+      className="flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition duration-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-violet-500/40 dark:hover:bg-violet-500/10 dark:hover:text-violet-300"
+      onClick={() => {
+        setTheme(isDarkMode ? "light" : "dark");
+      }}
+      title={label}
       type="button"
     >
       {isDarkMode ? (
-        <Sun aria-hidden="true" size={20} />
+        <Sun aria-hidden="true" size={19} />
       ) : (
-        <Moon aria-hidden="true" size={20} />
+        <Moon aria-hidden="true" size={19} />
       )}
     </button>
   );

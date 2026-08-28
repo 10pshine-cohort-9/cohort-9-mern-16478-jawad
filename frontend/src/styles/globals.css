@@ -84,3 +84,50 @@ button:disabled,
 [aria-disabled="true"] {
   cursor: not-allowed;
 }
+
+:root {
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  background: #f7f8fc;
+}
+
+html.dark {
+  background: #07101f;
+  color-scheme: dark;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+.app-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 163 184 / 45%) transparent;
+}
+
+.app-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.app-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgb(148 163 184 / 45%);
+}
+
+.dark .app-scrollbar {
+  scrollbar-color: rgb(124 58 237 / 50%) transparent;
+}
+
+.dark .app-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(124 58 237 / 50%);
+}
