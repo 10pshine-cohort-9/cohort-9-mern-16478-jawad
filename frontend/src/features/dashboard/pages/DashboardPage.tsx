@@ -9,40 +9,57 @@ import { RecentActivity } from "@/features/dashboard/components/RecentActivity";
 import { NoteCardSkeleton } from "@/features/notes/components/NoteCardSkeleton";
 import { NotesEmptyState } from "@/features/notes/components/NotesEmptyState";
 import { NotesGrid } from "@/features/notes/components/NotesGrid";
-import { deleteNote, getNotes } from "@/features/notes/services/notes.api";
-import type { Note } from "@/features/notes/types/note.types";
+import {
+  deleteNote,
+  getNotes,
+  getNoteStats,
+  getRecentNoteActivities,
+  updateNoteFavoriteStatus,
+} from "@/features/notes/services/notes.api";
+import type {
+  Note,
+  NoteActivity,
+  NoteStats,
+} from "@/features/notes/types/note.types";
 
-const getStartOfCurrentWeek = (): Date => {
-  const startDate = new Date();
-
-  const currentDay = startDate.getDay();
-
-  const daysSinceMonday = currentDay === 0 ? 6 : currentDay - 1;
-
-  startDate.setDate(startDate.getDate() - daysSinceMonday);
-
-  startDate.setHours(0, 0, 0, 0);
-
-  return startDate;
+const initialStats: NoteStats = {
+  total: 0,
+  pinned: 0,
+  favorites: 0,
+  deleted: 0,
+  thisWeek: 0,
 };
 
 const DashboardPage = () => {
   const [notes, setNotes] = useState<Note[]>([]);
 
+  const [stats, setStats] = useState<NoteStats>(initialStats);
+
+  const [activities, setActivities] = useState<NoteActivity[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
 
   const [deletingNoteId, setDeletingNoteId] = useState<string>();
 
+  const [updatingFavoriteNoteId, setUpdatingFavoriteNoteId] =
+    useState<string>();
+
   const [errorMessage, setErrorMessage] = useState<string>();
 
-  const loadNotes = useCallback(async () => {
+  const loadDashboard = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage(undefined);
 
     try {
-      const result = await getNotes();
+      const [notesResult, statsResult, activitiesResult] = await Promise.all([
+        getNotes(),
+        getNoteStats(),
+        getRecentNoteActivities(),
+      ]);
 
-      setNotes(result.notes);
+      setNotes(notesResult.notes);
+      setStats(statsResult);
+      setActivities(activitiesResult);
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error));
     } finally {
@@ -51,8 +68,8 @@ const DashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    void loadNotes();
-  }, [loadNotes]);
+    void loadDashboard();
+  }, [loadDashboard]);
 
   const recentNotes = useMemo(() => {
     return [...notes]
@@ -64,28 +81,13 @@ const DashboardPage = () => {
       .slice(0, 4);
   }, [notes]);
 
-  const notesThisWeek = useMemo(() => {
-    const startOfWeek = getStartOfCurrentWeek();
-
-    return notes.filter((note) => {
-      const creationDate = new Date(note.createdAt);
-
-      return (
-        !Number.isNaN(creationDate.getTime()) && creationDate >= startOfWeek
-      );
-    }).length;
-  }, [notes]);
-
   const handleDelete = async (noteId: string) => {
     setDeletingNoteId(noteId);
     setErrorMessage(undefined);
 
     try {
       await deleteNote(noteId);
-
-      setNotes((currentNotes) =>
-        currentNotes.filter((note) => note.id !== noteId),
-      );
+      await loadDashboard();
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error));
     } finally {
@@ -93,16 +95,37 @@ const DashboardPage = () => {
     }
   };
 
+  const handleFavoriteToggle = async (noteId: string, isFavorite: boolean) => {
+    setUpdatingFavoriteNoteId(noteId);
+    setErrorMessage(undefined);
+
+    try {
+      await updateNoteFavoriteStatus(noteId, isFavorite);
+
+      await loadDashboard();
+    } catch (error) {
+      setErrorMessage(getApiErrorMessage(error));
+    } finally {
+      setUpdatingFavoriteNoteId(undefined);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <DashboardHeader />
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-stretch">
+        <div className="space-y-6">
+          <DashboardHeader />
 
-      <DashboardStats
-        deletedNotes={0}
-        notesThisWeek={notesThisWeek}
-        pinnedNotes={0}
-        totalNotes={notes.length}
-      />
+          <DashboardStats
+            deletedNotes={stats.deleted}
+            favoriteNotes={stats.favorites}
+            notesThisWeek={stats.thisWeek}
+            totalNotes={stats.total}
+          />
+        </div>
+
+        <RecentActivity activities={activities} isLoading={isLoading} />
+      </div>
 
       {errorMessage && (
         <div
@@ -116,7 +139,7 @@ const DashboardPage = () => {
           <button
             className="inline-flex items-center gap-2 text-sm font-bold text-red-700 dark:text-red-300"
             onClick={() => {
-              void loadNotes();
+              void loadDashboard();
             }}
             type="button"
           >
@@ -126,51 +149,49 @@ const DashboardPage = () => {
         </div>
       )}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-white/5 dark:bg-[#1a1a2c]">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-base font-black text-slate-950 dark:text-white">
-                Recent Notes
-              </h2>
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_25px_rgba(15,23,42,0.04)] sm:p-5 dark:border-white/8 dark:bg-[#0d182b]">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-base font-extrabold text-[#11175f] dark:text-white">
+              Recent Notes
+            </h2>
 
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Your latest updated notes.
-              </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Your latest updated notes.
+            </p>
+          </div>
+
+          <Link
+            className="text-sm font-bold text-violet-600 transition hover:text-violet-700 dark:text-violet-300"
+            to="/notes"
+          >
+            View all notes
+          </Link>
+        </div>
+
+        <div className="mt-5">
+          {isLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {Array.from({
+                length: 4,
+              }).map((_, index) => (
+                <NoteCardSkeleton key={index} />
+              ))}
             </div>
-
-            <Link
-              className="text-sm font-bold text-violet-600 transition hover:text-violet-700 dark:text-violet-400"
-              to="/notes"
-            >
-              View all
-            </Link>
-          </div>
-
-          <div className="mt-5">
-            {isLoading ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {Array.from({
-                  length: 4,
-                }).map((_, index) => (
-                  <NoteCardSkeleton key={index} />
-                ))}
-              </div>
-            ) : recentNotes.length > 0 ? (
-              <NotesGrid
-                className="md:grid-cols-2 xl:grid-cols-2"
-                deletingNoteId={deletingNoteId}
-                notes={recentNotes}
-                onDelete={handleDelete}
-              />
-            ) : (
-              <NotesEmptyState />
-            )}
-          </div>
-        </section>
-
-        <RecentActivity />
-      </div>
+          ) : recentNotes.length > 0 ? (
+            <NotesGrid
+              className="sm:grid-cols-2 xl:grid-cols-4"
+              deletingNoteId={deletingNoteId}
+              notes={recentNotes}
+              onDelete={handleDelete}
+              onFavoriteToggle={handleFavoriteToggle}
+              updatingFavoriteNoteId={updatingFavoriteNoteId}
+            />
+          ) : (
+            <NotesEmptyState />
+          )}
+        </div>
+      </section>
     </div>
   );
 };
