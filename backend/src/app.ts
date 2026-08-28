@@ -12,6 +12,7 @@ import { env } from "./config/env.js";
 import { logger } from "./lib/logger.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { noteRouter } from "./modules/notes/note.routes.js";
+import { userRouter } from "./modules/users/user.routes.js";
 
 export const app = express();
 
@@ -95,6 +96,7 @@ app.get("/api/v1/health", (_request, response) => {
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/notes", noteRouter);
+app.use("/api/v1/users", userRouter);
 
 app.use(notFoundHandler);
 app.use(globalErrorHandler);

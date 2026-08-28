@@ -8,7 +8,8 @@ export interface PublicUser {
   phoneNumber: string;
   city: string;
   gender: Gender;
-  profileImageUrl: string;
+  // profileImageUrl: string;
+  profileImageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
